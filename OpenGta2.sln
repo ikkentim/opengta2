@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenGta2.Data", "src\OpenGt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenGta2.Data.UnitTests", "src\OpenGta2.Data.UnitTests\OpenGta2.Data.UnitTests.csproj", "{D7E24564-8F36-4953-A91A-80D046FE541E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenGta2.DebugConsole", "src\OpenGta2.DebugConsole\OpenGta2.DebugConsole.csproj", "{3CA4D99C-5FEB-4D1E-86A8-98280A2219A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{D7E24564-8F36-4953-A91A-80D046FE541E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7E24564-8F36-4953-A91A-80D046FE541E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7E24564-8F36-4953-A91A-80D046FE541E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3CA4D99C-5FEB-4D1E-86A8-98280A2219A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3CA4D99C-5FEB-4D1E-86A8-98280A2219A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3CA4D99C-5FEB-4D1E-86A8-98280A2219A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3CA4D99C-5FEB-4D1E-86A8-98280A2219A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
