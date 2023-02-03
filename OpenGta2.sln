@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenGta2.Data", "src\OpenGta2.Data\OpenGta2.Data.csproj", "{0ADDBE91-1AB3-41D8-952D-9161A9D08D96}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenGta2.Data.UnitTests", "src\OpenGta2.Data.UnitTests\OpenGta2.Data.UnitTests.csproj", "{D7E24564-8F36-4953-A91A-80D046FE541E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0ADDBE91-1AB3-41D8-952D-9161A9D08D96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0ADDBE91-1AB3-41D8-952D-9161A9D08D96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0ADDBE91-1AB3-41D8-952D-9161A9D08D96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0ADDBE91-1AB3-41D8-952D-9161A9D08D96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7E24564-8F36-4953-A91A-80D046FE541E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7E24564-8F36-4953-A91A-80D046FE541E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7E24564-8F36-4953-A91A-80D046FE541E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7E24564-8F36-4953-A91A-80D046FE541E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {406F8BA3-FB34-49C5-B400-B64F78D3DAAE}
+	EndGlobalSection
+EndGlobal
