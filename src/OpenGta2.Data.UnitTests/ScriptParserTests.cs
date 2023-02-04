@@ -1,5 +1,6 @@
 using Shouldly;
 using System.IO;
+using OpenGta2.Data.Scripts;
 using Xunit;
 
 namespace OpenGta2.Data.UnitTests

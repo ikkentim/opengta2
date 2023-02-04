@@ -26,7 +26,7 @@ namespace OpenGta2.Data.Scripts
             return new Script(pointers, scriptData, strings);
         }
 
-        private ushort[] ReadPointers(Stream stream)
+        private static ushort[] ReadPointers(Stream stream)
         {
             var pointers = new ushort[6000];
             var bPointers = MemoryMarshal.Cast<ushort, byte>(pointers.AsSpan());
@@ -43,7 +43,7 @@ namespace OpenGta2.Data.Scripts
             return pointers;
         }
 
-        private byte[] ReadScript(Stream stream)
+        private static byte[] ReadScript(Stream stream)
         {
             var scriptData = new byte[65536];
             var length = stream.Read(scriptData.AsSpan());
@@ -56,18 +56,18 @@ namespace OpenGta2.Data.Scripts
             return scriptData;
         }
 
-        private StringTable ReadStrings(Stream stream)
+        private static StringTable ReadStrings(Stream stream)
         {
-            var tableLength = ReadWord(stream);
+            var tableLength = stream.ReadExactWord();
             var read = 0;
             var strings = new Dictionary<uint, StringValue>();
 
             while (read < tableLength)
             {
-                var id = ReadDoubleWord(stream);
-                var type = (StringType)ReadDoubleWord(stream);
-                var length = ReadByte(stream);
-                var value = ReadString(stream, length);
+                var id = stream.ReadExactDoubleWord();
+                var type = (StringType)stream.ReadExactDoubleWord();
+                var length = stream.ReadExactByte();
+                var value = stream.ReadExactString(length);
 
                 read += 9 + length;
 
@@ -76,59 +76,7 @@ namespace OpenGta2.Data.Scripts
 
             return new StringTable(strings);
         }
-
-        private static string ReadString(Stream stream, byte length)
-        {
-            Span<byte> buffer = stackalloc byte[length];
-            var read = stream.Read(buffer);
-
-            if (read != length)
-            {
-                throw new Exception("bad read");
-            }
-
-            var nullTerminatorIndex = buffer.IndexOf((byte)0);
-            var textBuffer = buffer[..nullTerminatorIndex];
-
-            return Encoding.ASCII.GetString(textBuffer);
-        }
-
-        private static unsafe ushort ReadWord(Stream stream)
-        {
-            ushort d = 0;
-            var p = (byte*)&d;
-            var length = stream.Read(new Span<byte>(p, 2));
-
-            if (length != 2)
-            {
-                throw new Exception("bad read");
-            }
-            return d;
-        }
-
-        private static unsafe uint ReadDoubleWord(Stream stream)
-        {
-            uint d = 0;
-            var p = (byte*)&d;
-            var length = stream.Read(new Span<byte>(p, 4));
-
-            if (length != 4)
-            {
-                throw new Exception("bad read");
-            }
-            return d;
-        }
-
-        private static byte ReadByte(Stream stream)
-        {
-            var b = stream.ReadByte();
-
-            if (b < 0)
-            {
-                throw new Exception("bad read");
-            }
-
-            return (byte)b;
-        }
     }
+
+
 }

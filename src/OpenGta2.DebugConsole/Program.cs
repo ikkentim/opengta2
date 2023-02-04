@@ -10,6 +10,10 @@ var sut = new ScriptInterpreter();
 
 sut.Run(script, new LogScriptRuntime(script));
 
+var rdr = new GtaStringReader(new RiffReader(TestGamePath.OpenFile("data/e.gxt")));
+
+var strings = rdr.Read();
+
 public static class TestGamePath
 {
     public static DirectoryInfo Directory =>
