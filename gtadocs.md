@@ -8,5 +8,5 @@
 - *.GCI*: Vehicle parameters file
 
 ## Resources
-- [](https://gtamp.com/gta2/gta2-gmp-map-file-format/)
-- [](https://gtamp.com/gta2/gta2-style-sty-graphics-file-format/)
+- https://gtamp.com/gta2/gta2-gmp-map-file-format/
+- https://gtamp.com/gta2/gta2-style-sty-graphics-file-format/
