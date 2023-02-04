@@ -13,7 +13,7 @@ public class ScriptInterpreterTests
     {
         using var stream = TestGamePath.OpenFile("data/Industrial-2P.scr");
         var script = new ScriptParser().Parse(stream);
-
+        
         var runtime = new Mock<IScriptRuntime>();
 
         var sut = new ScriptInterpreter();

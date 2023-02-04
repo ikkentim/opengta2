@@ -1,7 +1,8 @@
-﻿namespace OpenGta2.Data;
+﻿namespace OpenGta2.DebugConsole;
 
 public enum CarModel
 {
+    // we don't need this data. is only used for debugging purposes.
     ALFA,
     ALLARD,
     AMDB4,
@@ -45,7 +46,8 @@ public enum CarModel
     MORRIS,
     PICKUP,
     RTYPE,
-    CAR43, SPIDER,
+    CAR43,
+    SPIDER,
     SPRITE,
     STRINRAY,
     STRATOS,
@@ -64,7 +66,8 @@ public enum CarModel
     TRAINCAB,
     TRAINFB,
     TRANCEAM,
-    TRUKCAB1,TRUKCAB2,
+    TRUKCAB1,
+    TRUKCAB2,
     TRUKCONT,
     TRUKTRNS,
     TVVAN,

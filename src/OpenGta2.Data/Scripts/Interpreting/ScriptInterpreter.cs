@@ -1,11 +1,12 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using OpenGta2.Data.Scripts.CommandParameters;
 
 namespace OpenGta2.Data.Scripts.Interpreting;
 
 public class ScriptInterpreter
 {
+    private static readonly int CommandSize = Marshal.SizeOf<ScriptCommand>();
+
     public void Run(Script script, IScriptRuntime runtime)
     {
         foreach (var pointer in script.Pointers)
@@ -16,24 +17,22 @@ public class ScriptInterpreter
             }
 
             var functionData = script.ScriptData.AsSpan(pointer..);
+            var argsData = functionData[CommandSize..];
 
             var command = MemoryMarshal.Read<ScriptCommand>(functionData);
-
-            Debug.WriteLine($"CMD type {command.Type:X}\tflags {command.Flags}\tPTR {command.PtrIndex:X}\tNEXT {command.NextPtrIndex:X}\t\t\t{command.Type}");
-
+            
             switch (command.Type)
             {
                 case ScriptCommandType.PARKED_CAR_DATA:
                 {
-                    var par = MemoryMarshal.Read<SpawnCarParameters>(functionData[Marshal.SizeOf<ScriptCommand>()..]);
-                    runtime.SpawnCar(command.PtrIndex, command.Type, par);
+                    var args = MemoryMarshal.Read<SpawnCarParameters>(argsData);
+                    runtime.SpawnCar(command.PtrIndex, command.Type, args);
                     break;
                 }
                 case ScriptCommandType.PLAYER_PED:
                 {
-                    var par = MemoryMarshal.Read<SpawnPlayerPedParameters>(
-                        functionData[Marshal.SizeOf<ScriptCommand>()..]);
-                    runtime.SpawnPlayerPed(command.PtrIndex, par);
+                    var args = MemoryMarshal.Read<SpawnPlayerPedParameters>(argsData);
+                    runtime.SpawnPlayerPed(command.PtrIndex, args);
                     break;
                 }
                 // TODO: Handle other commands

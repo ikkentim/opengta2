@@ -1,37 +1,34 @@
-﻿using System;
+﻿namespace OpenGta2.Data;
 
-namespace OpenGta2.Data
+public class RiffReader
 {
-    public class RiffReader
+    private readonly Stream _stream;
+
+    public RiffReader(Stream stream)
     {
-        private readonly Stream _stream;
+        _stream = stream;
+        Type = stream.ReadExactString(4);
+        Version = stream.ReadExactWord();
+    }
 
-        public RiffReader(Stream stream)
+    public string Type { get; }
+
+    public ushort Version { get; }
+
+    public IEnumerable<RiffChunk> ReadChunks()
+    {
+        while (_stream.TryReadExactString(4) is { } name)
         {
-            _stream = stream;
-            Type = stream.ReadExactString(4);
-            Version = stream.ReadExactWord();
-        }
+            var length = _stream.ReadExactDoubleWord();
 
-        public string Type { get; }
+            var data = new byte[length];
 
-        public ushort Version { get; }
-
-        public IEnumerable<RiffChunk> ReadChunks()
-        {
-            while (_stream.TryReadExactString(4) is { } name)
+            if (_stream.Read(data) != length)
             {
-                var length = _stream.ReadExactDoubleWord();
-
-                var data = new byte[length];
-
-                if (_stream.Read(data) != length)
-                {
-                    throw new Exception("bad read");
-                }
-
-                yield return new RiffChunk(name, data);
+                throw new Exception("bad read");
             }
+
+            yield return new RiffChunk(name, data);
         }
     }
 }
