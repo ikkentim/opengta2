@@ -3,11 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenGta2.Data", "src\OpenGta2.Data\OpenGta2.Data.csproj", "{0ADDBE91-1AB3-41D8-952D-9161A9D08D96}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenGta2.Data", "src\OpenGta2.Data\OpenGta2.Data.csproj", "{0ADDBE91-1AB3-41D8-952D-9161A9D08D96}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenGta2.Data.UnitTests", "src\OpenGta2.Data.UnitTests\OpenGta2.Data.UnitTests.csproj", "{D7E24564-8F36-4953-A91A-80D046FE541E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenGta2.DebugConsole", "src\OpenGta2.DebugConsole\OpenGta2.DebugConsole.csproj", "{3CA4D99C-5FEB-4D1E-86A8-98280A2219A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenGta2.DebugConsole", "src\OpenGta2.DebugConsole\OpenGta2.DebugConsole.csproj", "{3CA4D99C-5FEB-4D1E-86A8-98280A2219A9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8A2CAF3A-1B0D-4A50-ACD1-7ADCBEA66FD6}"
+	ProjectSection(SolutionItems) = preProject
+		gtadocs.md = gtadocs.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
