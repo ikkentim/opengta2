@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
+using OpenGta2.Data.Riff;
 
 namespace OpenGta2.Data.Map
 {
@@ -23,20 +20,23 @@ namespace OpenGta2.Data.Map
 
         public Map Read()
         {
-            var chunks = _reader.ReadAllChunks();
-
             // We're ignoring UMAP, CMAP PSXM chunks
-            var compressedMapChunk = chunks.Single(x => x.Name == "DMAP"); // required
-            var objectsChunk = chunks.SingleOrDefault(x => x.Name == "MOBJ");
-            var zonesChunk = chunks.SingleOrDefault(x => x.Name == "ZONE");
-            var animationsChunk = chunks.SingleOrDefault(x => x.Name == "ANIM");
-            var junctionsChunk = chunks.SingleOrDefault(x => x.Name == "RGEN");
-            var lightsChunk = chunks.SingleOrDefault(x => x.Name == "LGHT");
 
+            var compressedMapChunk = _reader.GetChunk("DMAP") ?? throw new Exception("Missing map data");
             var map = ParseMap(compressedMapChunk);
+
+            var objectsChunk = _reader.GetChunk("MOBJ");
             var objects = ParseMapObjects(objectsChunk);
+
+            var zonesChunk = _reader.GetChunk("ZONE");
             var zones = ParseMapZones(zonesChunk);
+
+            var animationsChunk = _reader.GetChunk("ANIM");
             var animations = ParseAnimations(animationsChunk);
+
+            var junctionsChunk = _reader.GetChunk("RGEN");
+            var lightsChunk = _reader.GetChunk("LGHT");
+
 
             // TODO: Lights and junctions
 
@@ -51,7 +51,7 @@ namespace OpenGta2.Data.Map
             if (chunk == null)
                 return Array.Empty<TileAnimation>();
             
-            using var stream = new MemoryStream(chunk.Data);
+            var stream = chunk.Stream;
 
             Span<byte> buffer = stackalloc byte[Marshal.SizeOf<TileAnimationHeader>()];
             Span<byte> tilesBuffer = stackalloc byte[512];
@@ -76,8 +76,8 @@ namespace OpenGta2.Data.Map
         {
             if (chunk == null)
                 return Array.Empty<MapZone>();
-            
-            using var stream = new MemoryStream(chunk.Data);
+
+            var stream = chunk.Stream;
 
             Span<byte> buffer = stackalloc byte[Marshal.SizeOf<MapZoneHeader>()];
             Span<byte> nameBuffer = stackalloc byte[256];
@@ -101,12 +101,12 @@ namespace OpenGta2.Data.Map
         {
             if (chunk == null)
                 return Array.Empty<MapObject>();
-            
-            using var stream = new MemoryStream(chunk.Data);
+
+            var stream = chunk.Stream;
 
             Span<byte> buffer = stackalloc byte[Marshal.SizeOf<MapObject>()];
 
-            var count = chunk.Data.Length / buffer.Length;
+            var count = stream.Length / buffer.Length;
 
             var result = new MapObject[count];
             for (var i = 0; i < count; i++)
@@ -121,7 +121,7 @@ namespace OpenGta2.Data.Map
 
         private static CompressedMap ParseMap(RiffChunk chunk)
         {
-            using var stream = new MemoryStream(chunk.Data);
+            var stream = chunk.Stream;
             // struct compressed_map
             // {
             //     UInt32 base [256][256];

@@ -1,5 +1,6 @@
 ﻿using OpenGta2.Data;
 using OpenGta2.Data.Map;
+using OpenGta2.Data.Riff;
 using OpenGta2.Data.Scripts;
 using OpenGta2.Data.Scripts.Interpreting;
 

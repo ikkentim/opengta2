@@ -1,3 +1,4 @@
+using OpenGta2.Data.Riff;
 using Shouldly;
 using Xunit;
 

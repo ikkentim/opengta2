@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using OpenGta2.Data.Riff;
 
 namespace OpenGta2.Data;
 
@@ -18,64 +19,56 @@ public class GtaStringReader
 
     public IDictionary<string, string> Read()
     {
-        // find chunks
-        RiffChunk? keys = null;
-        RiffChunk? data = null;
-
-        foreach (var chunk in _reader.ReadChunks())
-        {
-            if (chunk.Name == "TKEY")
-            {
-                keys = chunk;
-            }
-            else if (chunk.Name == "TDAT")
-            {
-                data = chunk;
-            }
-        }
-
-        if (keys == null || data == null)
-        {
-            throw new Exception("missing data");
-        }
-            
-        // match keys and data
-        var result = new Dictionary<string, string>();
-        var keysStream = new MemoryStream(keys.Data);
         var stringBuilder = new StringBuilder();
-        while (keysStream.Position < keysStream.Length)
+        var result = new Dictionary<string, string>();
+        
+        // read keys
+        var keyss = _reader.GetChunk("TKEY") ?? throw new Exception("missing keys");
+
+        var keysDict = new Dictionary<string, uint>();
+        while (keyss.Stream.Position < keyss.Stream.Length)
         {
-            var dataOffset = keysStream.ReadExactDoubleWord();
-            var name = keysStream.ReadExactString(8);
+            var dataOffset = keyss.Stream.ReadExactDoubleWord();
+            var name = keyss.Stream.ReadExactString(8);
+            keysDict[name] = dataOffset;
+        }
 
-            ReadString(dataOffset, data, stringBuilder);
-
-            result[name] = stringBuilder.ToString();
+        // read data
+        var dat = _reader.GetChunk("TDAT") ?? throw new Exception("missing data");
+        foreach (var kv in keysDict)
+        {
+            dat.Stream.Seek(kv.Value, SeekOrigin.Begin);
+            ReadString(dat.Stream, stringBuilder);
+            
+            result[kv.Key] = stringBuilder.ToString();
 
             stringBuilder.Clear();
         }
-
+        
         return result;
     }
 
-    private static void ReadString(uint dataOffset, RiffChunk data, StringBuilder stringBuilder)
+    private static void ReadString(Stream stream, StringBuilder stringBuilder)
     {
-        while (dataOffset < data.Data.Length)
+        Span<byte> buffer = stackalloc byte[1];
+        while (true)
         {
-            var charBuf = data.Data.AsSpan((int)dataOffset++, 1);
-            var modBuf = data.Data.AsSpan((int)dataOffset++, 1);
+            var character = stream.ReadByte();
+            var modifier = stream.ReadByte();
 
-            if (charBuf[0] == 0 && modBuf[0] == 0)
+            if (character == 0 && modifier == 0 || character < 0 || modifier < 0)
             {
                 break;
             }
 
-            if (modBuf[0] != 0)
+            if (modifier != 0)
             {
-                stringBuilder.Append(Encoding.UTF8.GetString(modBuf));
+                buffer[0] = (byte)modifier;
+                stringBuilder.Append(Encoding.UTF8.GetString(buffer));
             }
 
-            stringBuilder.Append(Encoding.UTF8.GetString(charBuf));
+            buffer[0] = (byte)character;
+            stringBuilder.Append(Encoding.UTF8.GetString(buffer));
         }
     }
 }

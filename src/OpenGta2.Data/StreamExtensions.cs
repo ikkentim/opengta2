@@ -58,7 +58,7 @@ internal static class StreamExtensions
         return d;
     }
 
-    public static void ReadExact(this Stream stream, Span<byte> span)
+    public static int ReadExact(this Stream stream, Span<byte> span)
     {
         var read = stream.Read(span);
 
@@ -66,6 +66,8 @@ internal static class StreamExtensions
         {
             throw new Exception("bad read");
         }
+
+        return read;
     }
 
     public static byte ReadExactByte(this Stream stream)
