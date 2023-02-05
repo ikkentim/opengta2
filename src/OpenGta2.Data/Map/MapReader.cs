@@ -22,27 +22,44 @@ namespace OpenGta2.Data.Map
         {
             // We're ignoring UMAP, CMAP PSXM chunks
 
-            var compressedMapChunk = _reader.GetChunk("DMAP") ?? throw new Exception("Missing map data");
-            var map = ParseMap(compressedMapChunk);
+            CompressedMap map;
+            MapObject[] objects;
+            MapZone[] zones;
+            TileAnimation[] animations;
 
-            var objectsChunk = _reader.GetChunk("MOBJ");
-            var objects = ParseMapObjects(objectsChunk);
+            using (var compressedMapChunk = _reader.GetChunk("DMAP") ?? throw new Exception("Missing map data"))
+            {
+                map = ParseMap(compressedMapChunk);
+            }
 
-            var zonesChunk = _reader.GetChunk("ZONE");
-            var zones = ParseMapZones(zonesChunk);
+            using (var objectsChunk = _reader.GetChunk("MOBJ"))
+            {
+                objects = ParseMapObjects(objectsChunk);
+            }
 
-            var animationsChunk = _reader.GetChunk("ANIM");
-            var animations = ParseAnimations(animationsChunk);
+            using (var zonesChunk = _reader.GetChunk("ZONE"))
+            {
+                zones = ParseMapZones(zonesChunk);
+            }
 
-            var junctionsChunk = _reader.GetChunk("RGEN");
-            var lightsChunk = _reader.GetChunk("LGHT");
+            using (var animationsChunk = _reader.GetChunk("ANIM"))
+            {
+                animations = ParseAnimations(animationsChunk);
+            }
 
+            using (var junctionsChunk = _reader.GetChunk("RGEN"))
+            {
+                // TODO
+            }
 
-            // TODO: Lights and junctions
+            using (var lightsChunk = _reader.GetChunk("LGHT"))
+            {
+                // TODO
+            }
 
             return new Map(map, objects, zones, animations);
         }
-        
+
         private const int MapWidth = 256;
         private const int MapHeight = 256;
 
@@ -122,6 +139,7 @@ namespace OpenGta2.Data.Map
         private static CompressedMap ParseMap(RiffChunk chunk)
         {
             var stream = chunk.Stream;
+
             // struct compressed_map
             // {
             //     UInt32 base [256][256];

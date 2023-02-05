@@ -8,6 +8,7 @@ public class RiffReader
 
     private readonly Stream _stream;
     private RiffChunkStream? _activeChunkStream;
+    private bool _isResettingForSearch;
 
     public RiffReader(Stream stream)
     {
@@ -22,7 +23,7 @@ public class RiffReader
 
     public RiffChunk? Next()
     {
-        CloseChunkStream(true);
+        _activeChunkStream?.Dispose();
 
         var name = _stream.TryReadExactString(ChunkNameLength);
 
@@ -43,7 +44,9 @@ public class RiffReader
             throw new NotSupportedException();
         }
 
-        CloseChunkStream(false);
+        _isResettingForSearch = true;
+        _activeChunkStream?.Dispose();
+        _isResettingForSearch = false;
 
         _stream.Seek(HeaderLength, SeekOrigin.Begin);
 
@@ -57,51 +60,6 @@ public class RiffReader
 
         return null;
     }
-
-    private void CloseChunkStream(bool moveToEnd)
-    {
-        if (_activeChunkStream == null)
-        {
-            return;
-        }
-
-        if (moveToEnd)
-        {
-            if (_activeChunkStream.CanSeek)
-            {
-                _activeChunkStream.Seek(0, SeekOrigin.End);
-            }
-            else
-            {
-                var remainder = _activeChunkStream.Length - _activeChunkStream.Position;
-
-                if (remainder > 0)
-                {
-                    Span<byte> buffer = stackalloc byte[256];
-                    while (remainder > 0)
-                    {
-                        remainder -= _activeChunkStream.ReadExact(buffer);
-                    }
-                }
-            }
-        }
-
-        _activeChunkStream.Dispose();
-    }
-
-    internal void CloseChunkStream(RiffChunkStream chunkStream)
-    {
-        if (chunkStream.IsDisposed)
-        {
-            return;
-        }
-
-        if (_activeChunkStream != chunkStream)
-        {
-            // We have multiple open streams. This should not happen
-            throw new InvalidOperationException();
-        }
-
-        _activeChunkStream = null;
-    }
+    
+    internal bool ShouldSeekEnd(RiffChunkStream chunkStream) => chunkStream == _activeChunkStream && !_isResettingForSearch;
 }

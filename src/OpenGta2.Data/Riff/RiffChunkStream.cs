@@ -22,12 +22,32 @@ public class RiffChunkStream : Stream
 
     public bool IsDisposed => _innerStream == null;
 
-    private long RemainingLength => _length - _position;
+    public override bool CanRead => true;
 
-    public override void Flush()
+    public override bool CanSeek => _innerStream?.CanSeek ?? throw new ObjectDisposedException(nameof(RiffChunkStream));
+
+    public override bool CanWrite => false;
+
+    public override long Length
     {
-        throw new NotSupportedException();
+        get
+        {
+            EnsureNotDisposed();
+            return _length;
+        }
     }
+
+    public override long Position
+    {
+        get
+        {
+            EnsureNotDisposed();
+            return _position;
+        }
+        set => Seek(value, SeekOrigin.Begin);
+    }
+
+    private long RemainingLength => _length - _position;
 
     public override int Read(byte[] buffer, int offset, int count)
     {
@@ -128,6 +148,8 @@ public class RiffChunkStream : Stream
         return result;
     }
 
+    public override void Flush() => throw new NotSupportedException();
+
     public override void SetLength(long value) => throw new NotSupportedException();
 
     public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
@@ -139,34 +161,38 @@ public class RiffChunkStream : Stream
             return;
         }
 
-        _reader.CloseChunkStream(this);
+        if (_reader.ShouldSeekEnd(this))
+        {
+            if (CanSeek)
+            {
+                Seek(0, SeekOrigin.End);
+            }
+            else
+            {
+                var remainder = RemainingLength;
+
+                if (remainder > 0)
+                {
+                    Span<byte> buffer = stackalloc byte[256];
+                    while (remainder > 0)
+                    {
+                        var read = Read(buffer);
+                        remainder -= read;
+
+                        if (read == 0)
+                        {
+                            throw new Exception("invalid read");
+                        }
+                    }
+                }
+            }
+        }
+
         _innerStream = null;
     }
 
     private void EnsureNotDisposed()
     {
         if (_innerStream == null) throw new ObjectDisposedException(nameof(RiffChunkStream));
-    }
-
-    public override bool CanRead => true;
-    public override bool CanSeek => _innerStream?.CanSeek ?? throw new ObjectDisposedException(nameof(RiffChunkStream));
-    public override bool CanWrite => false;
-    public override long Length
-    {
-        get
-        {
-            EnsureNotDisposed();
-            return _length;
-        }
-    }
-
-    public override long Position
-    {
-        get
-        {
-            EnsureNotDisposed();
-            return _position;
-        }
-        set => Seek(value, SeekOrigin.Begin);
     }
 }
