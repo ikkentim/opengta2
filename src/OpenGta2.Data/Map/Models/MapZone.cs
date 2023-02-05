@@ -1,15 +1,21 @@
-﻿using System.Runtime.InteropServices;
+﻿namespace OpenGta2.Data.Map;
 
-namespace OpenGta2.Data.Map;
-
-[StructLayout(LayoutKind.Explicit)]
 public struct MapZone
 {
-    [FieldOffset(0)] public ZoneType Type;
-    [FieldOffset(1)] public byte X;
-    [FieldOffset(2)] public byte Y;
-    [FieldOffset(3)] public byte Width;
-    [FieldOffset(4)] public byte Height;
-    [FieldOffset(5)] public byte NameLength;
-    // followed by name.
+    public ZoneType Type { get; }
+    public byte X { get; }
+    public byte Y { get; }
+    public byte Width { get; }
+    public byte Height { get; }
+    public string Name { get; }
+
+    public MapZone(MapZoneHeader header, string name)
+    {
+        Type = header.Type;
+        X = header.X;
+        Y = header.Y;
+        Width = header.Width;
+        Height = header.Height;
+        Name = name;
+    }
 }

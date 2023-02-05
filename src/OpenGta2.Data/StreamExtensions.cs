@@ -31,6 +31,7 @@ internal static class StreamExtensions
             return Encoding.ASCII.GetString(textBuffer);
         }
     }
+
     public static unsafe ushort ReadExactWord(this Stream stream)
     {
         ushort d = 0;
@@ -55,6 +56,16 @@ internal static class StreamExtensions
             throw new Exception("bad read");
         }
         return d;
+    }
+
+    public static void ReadExact(this Stream stream, Span<byte> span)
+    {
+        var read = stream.Read(span);
+
+        if (read != span.Length)
+        {
+            throw new Exception("bad read");
+        }
     }
 
     public static byte ReadExactByte(this Stream stream)
