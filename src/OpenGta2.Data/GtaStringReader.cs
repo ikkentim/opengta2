@@ -20,36 +20,33 @@ public class GtaStringReader
     public IDictionary<string, string> Read()
     {
         var stringBuilder = new StringBuilder();
+        var keys = new Dictionary<string, uint>();
         var result = new Dictionary<string, string>();
         
         // read keys
-        var keyss = _reader.GetChunk("TKEY") ?? throw new Exception("missing keys");
-
-        var keysDict = new Dictionary<string, uint>();
-        while (keyss.Stream.Position < keyss.Stream.Length)
+        var keysChunk = _reader.GetChunk("TKEY") ?? throw new Exception("missing keys");
+        while (keysChunk.Stream.Position < keysChunk.Stream.Length)
         {
-            var dataOffset = keyss.Stream.ReadExactDoubleWord();
-            var name = keyss.Stream.ReadExactString(8);
-            keysDict[name] = dataOffset;
+            var dataOffset = keysChunk.Stream.ReadExactDoubleWord();
+            var name = keysChunk.Stream.ReadExactString(8);
+            keys[name] = dataOffset;
         }
 
         // read data
-        var dat = _reader.GetChunk("TDAT") ?? throw new Exception("missing data");
-        foreach (var kv in keysDict)
+        var dataChunk = _reader.GetChunk("TDAT") ?? throw new Exception("missing data");
+        foreach (var kv in keys)
         {
-            dat.Stream.Seek(kv.Value, SeekOrigin.Begin);
-            ReadString(dat.Stream, stringBuilder);
-            
-            result[kv.Key] = stringBuilder.ToString();
-
-            stringBuilder.Clear();
+            dataChunk.Stream.Seek(kv.Value, SeekOrigin.Begin);
+            result[kv.Key] = ReadString(dataChunk.Stream, stringBuilder);
         }
         
         return result;
     }
 
-    private static void ReadString(Stream stream, StringBuilder stringBuilder)
+    private static string ReadString(Stream stream, StringBuilder stringBuilder)
     {
+        stringBuilder.Clear();
+
         Span<byte> buffer = stackalloc byte[1];
         while (true)
         {
@@ -70,5 +67,7 @@ public class GtaStringReader
             buffer[0] = (byte)character;
             stringBuilder.Append(Encoding.UTF8.GetString(buffer));
         }
+
+        return stringBuilder.ToString();
     }
 }
