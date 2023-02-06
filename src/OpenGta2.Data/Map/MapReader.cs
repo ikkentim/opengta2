@@ -189,7 +189,7 @@ namespace OpenGta2.Data.Map
                     blockIndices[i] = stream.ReadExactDoubleWord();
                 }
 
-                columns[(uint)columnOffset] = new ColumnInfo(height, offset, blockIndices);
+                columns[(uint)columnOffset / 4] = new ColumnInfo(height, offset, blockIndices);
             }
 
             // read blocks
