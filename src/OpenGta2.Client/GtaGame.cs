@@ -18,12 +18,25 @@ public class GtaGame : Game
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
     }
+    
+    public Matrix Projection => GetProj();
 
-    public Matrix Projection => Matrix.CreatePerspectiveFieldOfView(
+    public Matrix ProjectionLhs => Matrix.CreatePerspectiveFieldOfView(
         MathHelper.PiOver4, // 90 fov
-        Window.ClientBounds.Width / (float)Window.ClientBounds.Height,
+        (Window.ClientBounds.Width / (float)Window.ClientBounds.Height),
         0.1f,
         9000);
+    
+    private Matrix GetProj()
+    {
+        var p = ProjectionLhs;
+
+        // Invert matrix because DirectX is LHS and MonoGame is RHS
+        p.M11 = -p.M11;
+        p.M13 = -p.M13;
+
+        return p;
+    }
 
     public BasicEffect BasicEffect => _basicEffect!;
 

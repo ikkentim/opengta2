@@ -26,34 +26,34 @@ public class TestWorldScene : Scene
 
         if (kb.IsKeyDown(Keys.Right))
         {
-            cameraInput += Vector3.Right;
+            cameraInput += MapComponent.GtaVector.Right;
         }
 
         if (kb.IsKeyDown(Keys.Left))
         {
-            cameraInput += Vector3.Left;
+            cameraInput += MapComponent.GtaVector.Left;
         }
         
         if (kb.IsKeyDown(Keys.Up))
         {
-            cameraInput += Vector3.Up;
+            cameraInput += MapComponent.GtaVector.Up;
         }
 
         if (kb.IsKeyDown(Keys.Down))
         {
-            cameraInput += Vector3.Down;
+            cameraInput += MapComponent.GtaVector.Down;
         }
         if (kb.IsKeyDown(Keys.PageUp))
         {
-            cameraInput += Vector3.Forward;
+            cameraInput += MapComponent.GtaVector.Skywards;
         }
         if (kb.IsKeyDown(Keys.PageDown))
         {
-            cameraInput += Vector3.Backward;
+            cameraInput -= MapComponent.GtaVector.Skywards;
         }
 
         Camera.Position += cameraInput * gameTime.GetDelta() * (Camera.Position.Z * 0.4f);
-        Camera.Frustum.Matrix = Camera.ViewMatrix * Game.Projection;
+        Camera.Frustum.Matrix = Camera.ViewMatrix * Game.ProjectionLhs;
 
         base.Update(gameTime);
     }
