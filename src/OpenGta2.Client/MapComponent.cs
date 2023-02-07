@@ -13,7 +13,7 @@ public class MapComponent : DrawableGameComponent
     private VertexBuffer? vertexBuffer;
     private IndexBuffer? indexBuffer;
     private VertexPositionColor[] _vertices = new VertexPositionColor[4];
-    private short[] _indices = { 2, 1, 0, 2, 3, 1, /* reversed because i messed up. quick hacks: */0, 1, 2, 1, 3, 2 };
+    private short[] _indices = { 0, 1, 2, 1, 3, 2 };
     public MapComponent(GtaGame game, Camera camera, Map map) : base(game)
     {
         _game = game;
@@ -25,14 +25,12 @@ public class MapComponent : DrawableGameComponent
     {
         // for now simple buffers for drawing a single face. will optimize this later.
         vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColor), 4, BufferUsage.WriteOnly);
-        indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), 12, BufferUsage.WriteOnly);
+        indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), 6, BufferUsage.WriteOnly);
         indexBuffer.SetData(_indices);
 
         base.LoadContent();
     }
-
-    private const float BlockSize = 10;
-
+    
     public override void Draw(GameTime gameTime)
     {
         Debug.WriteLine(_camera.Position);
@@ -51,9 +49,9 @@ public class MapComponent : DrawableGameComponent
         {
 
             // simple column culling
-            var colMin = new Vector2(colX * BlockSize, colY * BlockSize);
-            var colMax = colMin + new Vector2(BlockSize, BlockSize);
-            if (!_camera.Frustum.Intersects(new BoundingBox(new Vector3(colMin, -10), new Vector3(colMax, 10))))
+            var colMin = new Vector2(colX, colY);
+            var colMax = colMin + Vector2.One;
+            if (!_camera.Frustum.Intersects(new BoundingBox(new Vector3(colMin, 0), new Vector3(colMax, 5))))
             {
                 continue;
             }
@@ -62,12 +60,12 @@ public class MapComponent : DrawableGameComponent
             var columnNum = map.Base[colX, colY];
             var column = map.Columns[columnNum];
                 
-            var blockY = BlockSize * colY;
-            var blockX = BlockSize * colX;
+            var blockY = colY;
+            var blockX = colX;
 
             for (var colZ = column.Offset; colZ < column.Height; colZ++)
             {
-                var blockZ = BlockSize * colZ;
+                var blockZ = colZ;
 
                 var blockNum = column.Blocks[colZ - column.Offset];
 
@@ -79,48 +77,48 @@ public class MapComponent : DrawableGameComponent
                 if (block.Lid.TileGraphic != 0)
                 {
                     RenderFace(new Vector3(blockX, blockY, blockZ), 
-                        new Vector3(0, 0, BlockSize),
-                        new Vector3(BlockSize, 0, BlockSize), 
-                        new Vector3(0, BlockSize, BlockSize),
-                        new Vector3(BlockSize, BlockSize, BlockSize), 
-                        Color.Red, colZ, true);
+                        new Vector3(0, 0, 1),
+                        new Vector3(1, 0, 1), 
+                        new Vector3(0, 1, 1),
+                        new Vector3(1, 1, 1), 
+                        Color.Red, colZ);
                 }
                 
                 if (block.Right.TileGraphic != 0)
                 {
                     RenderFace(new Vector3(blockX, blockY, blockZ), 
-                        new Vector3(BlockSize, BlockSize, BlockSize),
-                        new Vector3(BlockSize, 0, BlockSize), 
-                        new Vector3(BlockSize, BlockSize, 0),
-                        new Vector3(BlockSize, 0, 0), 
-                        Color.Blue, colZ, true);
+                        new Vector3(1, 1, 1),
+                        new Vector3(1, 0, 1), 
+                        new Vector3(1, 1, 0),
+                        new Vector3(1, 0, 0), 
+                        Color.Blue, colZ);
                 }
                 if (block.Bottom.TileGraphic != 0)
                 {
                     RenderFace(new Vector3(blockX, blockY, blockZ), 
-                        new Vector3(0, BlockSize, BlockSize),
-                        new Vector3(BlockSize, BlockSize, BlockSize),
-                        new Vector3(0, BlockSize, 0),
-                        new Vector3(BlockSize, BlockSize, 0),
-                        Color.Yellow, colZ, true);
+                        new Vector3(0, 1, 1),
+                        new Vector3(1, 1, 1),
+                        new Vector3(0, 1, 0),
+                        new Vector3(1, 1, 0),
+                        Color.Yellow, colZ);
                 }
                 if (block.Top.TileGraphic != 0)
                 {
                     RenderFace(new Vector3(blockX, blockY, blockZ), 
-                        new Vector3(BlockSize, 0, BlockSize),
-                        new Vector3(0, 0, BlockSize), 
-                        new Vector3(BlockSize, 0, 0),
+                        new Vector3(1, 0, 1),
+                        new Vector3(0, 0, 1), 
+                        new Vector3(1, 0, 0),
                         new Vector3(0, 0, 0), 
-                        Color.Green, colZ, true);
+                        Color.Green, colZ);
                 }
                 if (block.Left.TileGraphic != 0)
                 {
                     RenderFace(new Vector3(blockX, blockY, blockZ), 
-                        new Vector3(0, 0, BlockSize),
-                        new Vector3(0, BlockSize, BlockSize), 
+                        new Vector3(0, 0, 1),
+                        new Vector3(0, 1, 1), 
                         new Vector3(0, 0, 0),
-                        new Vector3(0, BlockSize, 0), 
-                        Color.Magenta, colZ, true);
+                        new Vector3(0, 1, 0), 
+                        Color.Magenta, colZ);
                 }
             }
         }
@@ -129,10 +127,11 @@ public class MapComponent : DrawableGameComponent
     }
 
     private void RenderFace(Vector3 blockPosition, Vector3 topLeft, Vector3 topRight, Vector3 bottomLeft,
-        Vector3 bottomRight, Color color, float depth, bool reverse)
+        Vector3 bottomRight, Color color, float depth)
     {
         // depth color change for testing
-        color = new Color((byte)MathHelper.Clamp(color.R - depth * 15, 0, 255), (byte)MathHelper.Clamp(color.G - depth * 10, 0, 255), (byte)MathHelper.Clamp(color.B - depth * 10, 0, 255), color.A);
+        var colorScale = ((depth + 2) / 7.0f);
+        color = new Color((byte)MathHelper.Clamp(color.R * colorScale, 0, 255), (byte)MathHelper.Clamp(color.G * colorScale, 0, 255), (byte)MathHelper.Clamp(color.B * colorScale, 0, 255), color.A);
 
         _vertices[0] = new VertexPositionColor(topLeft, color);
         _vertices[1] = new VertexPositionColor(topRight, color);
@@ -148,37 +147,7 @@ public class MapComponent : DrawableGameComponent
         foreach (var pass in _game.BasicEffect.CurrentTechnique.Passes)
         {
             pass.Apply();
-            _game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, reverse ? 6 : 0, 2);
+            _game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, 2);
         }
-    }
-
-    public static class GtaVector
-    {
-        private static readonly Vector3 _left = -Vector3.UnitX;
-        private static readonly Vector3 _right = Vector3.UnitX;
-        private static readonly Vector3 _up = -Vector3.UnitY;
-        private static readonly Vector3 _down = Vector3.UnitY;
-        private static readonly Vector3 _sky = Vector3.UnitZ;
-        /// <summary>
-        /// (-1, 0, 0)
-        /// </summary>
-        public static Vector3 Left => _left;
-        /// <summary>
-        /// (1, 0, 0)
-        /// </summary>
-        public static Vector3 Right => _right;
-        /// <summary>
-        /// (0, -1, 0)
-        /// </summary>
-        public static Vector3 Up => _up;
-        /// <summary>
-        /// (0, 1, 0)
-        /// </summary>
-        public static Vector3 Down => _down;
-
-        /// <summary>
-        /// (0, 0, 1)
-        /// </summary>
-        public static Vector3 Skywards => _sky;
     }
 }
