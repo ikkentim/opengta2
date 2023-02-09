@@ -1,61 +1,69 @@
-﻿using System.Runtime.InteropServices;
+﻿namespace OpenGta2.Data.Map;
 
-namespace OpenGta2.Data.Map;
-
-[StructLayout(LayoutKind.Explicit)]
-public readonly struct SlopeType
+public enum SlopeType : byte
 {
-
-    [FieldOffset(0)] private readonly byte _data;
-
-    public GroundType GroundType => (GroundType)(_data & 0x3);
-
-    public byte Type => (byte)(_data >> 2);
-
-    /*
-     * Type:
-     *   0 = none
-     *   1- 2 = up 26 low, high
-     *   3 – 4 = down 26 low, high5 – 6 = left 26 low, high
-     *   7 – 8 = right 26 low, high
-     *   9 – 16 = up 7 low – high17 – 24 = down 7 low – high
-     *   25 – 32 = left 7 low – high
-     *   33 – 40 = right 7 low – high
-     *
-     *   41 – 44 = 45up,down,left,right
-     *
-     *   45 = diagonal, facing up left
-     *
-     *   46 = diagonal, facing up right
-     *
-     *   47 = diagonal, facing down left
-     *
-     *   48 = diagonal, facing down right
-     *
-     *   49 = 3 or 4-sided diagonal slope, facing up left
-     *   50 = 3 or 4-sided diagonal slope, facing up right
-     *   51 = 3 or 4-sided diagonal slope, facing down left
-     *   52 = 3 or 4-sided diagonal slope, facing down right
-     *
-     *   53 = partial block left
-     *
-     *   54 = partial block right
-     *
-     *   55 = partial block top
-     *
-     *   56 = partial block bottom
-     *
-     *   57 = partial block top left corner
-     *
-     *   58 = partial block top right corner
-     *
-     *   59 = partial block bottom right corner
-     *
-     *   60 = partial block bottom left corner
-     *
-     *   61 = partial centre block 16×16
-     *
-     *   62 = reserved for future use
-     *   63 = indicates slope in block above
-     */
+    None,
+    Up26_1,
+    Up26_2,
+    Down26_1,
+    Down26_2,
+    Left26_1,
+    Left26_2,
+    Right26_1,
+    Right26_2,
+    Up7_1,
+    Up7_2,
+    Up7_3,
+    Up7_4,
+    Up7_5,
+    Up7_6,
+    Up7_7,
+    Up7_8,
+    Down7_1,
+    Down7_2,
+    Down7_3,
+    Down7_4,
+    Down7_5,
+    Down7_6,
+    Down7_7,
+    Down7_8,
+    Left7_1,
+    Left7_2,
+    Left7_3,
+    Left7_4,
+    Left7_5,
+    Left7_6,
+    Left7_7,
+    Left7_8,
+    Right7_1,
+    Right7_2,
+    Right7_3,
+    Right7_4,
+    Right7_5,
+    Right7_6,
+    Right7_7,
+    Right7_8,
+    Up45,
+    Down45,
+    Left45,
+    Right45,
+    DiagonalFacingUpLeft,
+    DiagonalFacingUpRight,
+    DiagonalFacingDownLeft,
+    DiagonalFacingDownRight,
+    DiagonalSlopeFacingUpLeft,
+    DiagonalSlopeFacingUpRight,
+    DiagonalSlopeFacingDownLeft,
+    DiagonalSlopeFacingDownRight,
+    PartialBlockLeft,
+    PartialBlockRight,
+    PartialBlockTop,
+    PartialBlockBottom,
+    PartialBlockTopLeftCorner,
+    PartialBlockTopRightCorner,
+    PartialBlockBottomLeftCorner,
+    PartialBlockBottomRightCorner,
+    PartialBlockCentre,
+    Reserved,
+    SlopeAbove
 }

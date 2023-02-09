@@ -204,7 +204,7 @@ namespace OpenGta2.Data.Map
                 blocks[i] = MemoryMarshal.Read<BlockInfo>(blockBuffer);
             }
 
-            return new CompressedMap(@base, columns, NumBlocks: 0, blocks);
+            return new CompressedMap(@base, columns, blocks);
         }
     }
 }

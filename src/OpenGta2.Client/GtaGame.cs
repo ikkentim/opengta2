@@ -17,6 +17,7 @@ public class GtaGame : Game
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
+        
     }
     
     public Matrix Projection => GetProj();
@@ -43,6 +44,10 @@ public class GtaGame : Game
     protected override void Initialize()
     {
         ActivateScene(new TestWorldScene(this));
+
+        _graphics.PreferredBackBufferWidth = 1920;
+        _graphics.PreferredBackBufferHeight = 1080;
+        _graphics.ApplyChanges();
 
         base.Initialize();
     }

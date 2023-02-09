@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using OpenGta2.Data.Map;
 
 namespace OpenGta2.Data;
 
