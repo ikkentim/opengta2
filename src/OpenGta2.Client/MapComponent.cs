@@ -1,11 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Transactions;
-using Accessibility;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Data.Map;
-using SharpDX.DXGI;
+using OpenGta2.Data.Style;
 
 namespace OpenGta2.Client;
 
@@ -14,14 +13,17 @@ public class MapComponent : DrawableGameComponent
     private readonly GtaGame _game;
     private readonly Camera _camera;
     private readonly Map _map;
+    private readonly Style _style;
     private VertexBuffer? vertexBuffer;
     private IndexBuffer? indexBuffer;
+    private Texture2D? _tilesTexture;
 
-    public MapComponent(GtaGame game, Camera camera, Map map) : base(game)
+    public MapComponent(GtaGame game, Camera camera, Map map, Style style) : base(game)
     {
         _game = game;
         _camera = camera;
         _map = map;
+        _style = style;
     }
 
     protected override void LoadContent()
@@ -29,10 +31,47 @@ public class MapComponent : DrawableGameComponent
         // for now simple buffers for drawing a single face. will optimize this later.
         vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColor), 4 * 5, BufferUsage.WriteOnly);
         indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), 6 * 5, BufferUsage.WriteOnly);
+        _tilesTexture = new Texture2D(GraphicsDevice, 2048, 2048, true, SurfaceFormat.Color);
 
-        base.LoadContent();
+        CreateTilesTexture();
     }
 
+    private void CreateTilesTexture()
+    {
+        var tileCount = _style.Tiles.Count;
+        
+        // style can contain up to 992 tiles, each tile is 64x64 pixels. we're going to draw each tile
+        // on a single 2048x2048 texture map. the texture map will provide room for 32x32 tiles.
+        var tileData = new uint[Tiles.TileHeight * Tiles.TileHeight];
+
+        for (ushort tileNumber = 0; tileNumber < tileCount; tileNumber++)
+        {
+            // don't need to add a base for virtual palette number - base for tiles is always 0.
+            var physicalPaletteNumber = _style.PaletteIndex.PhysPalette[tileNumber];
+            
+            var palette = _style.PhysicsalPalette.GetPalette(physicalPaletteNumber);
+            var rowIndex = tileNumber % 32;
+            var rowNum = tileNumber / 32;
+
+            for (var y = 0; y < Tiles.TileHeight; y++)
+            {
+                var tileSlice = _style.Tiles.GetTileSlice(tileNumber, y);
+                for (var x = 0; x < Tiles.TileWidth; x++)
+                {
+                    var color = palette.GetColor(tileSlice[x]);
+                    tileData[y * Tiles.TileWidth + x] = color.Argb;
+                }
+            }
+
+            var textureRect = new Rectangle(rowIndex * Tiles.TileWidth, rowNum * Tiles.TileHeight, Tiles.TileWidth,
+                Tiles.TileHeight);
+            _tilesTexture!.SetData(0, textureRect, tileData, 0, tileData.Length);
+        }
+
+        using var stream = File.OpenWrite($"debug{DateTime.Now:HHmmsss}.png");
+        _tilesTexture!.SaveAsPng(stream, 2048, 2048);
+    }
+    
     public override void Draw(GameTime gameTime)
     {
         _game.BasicEffect.VertexColorEnabled = true;

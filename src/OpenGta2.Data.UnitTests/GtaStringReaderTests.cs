@@ -10,8 +10,9 @@ public class GtaStringReaderTests
     public void Read_should_succeed()
     {
         using var stream = TestGamePath.OpenFile("data/e.gxt");
+        using var riff = new RiffReader(stream);
 
-        var sut = new GtaStringReader(new RiffReader(stream));
+        var sut = new GtaStringReader(riff);
 
         var result = sut.Read();
 

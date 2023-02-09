@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Runtime.InteropServices;
+using System.Text;
 using OpenGta2.Data.Map;
 
 namespace OpenGta2.Data;
@@ -70,6 +71,12 @@ internal static class StreamExtensions
 
         return read;
     }
+
+    public static int ReadExact<T>(this Stream stream, Span<T> span) where T : struct
+    {
+        var buffer = MemoryMarshal.Cast<T, byte>(span);
+        return ReadExact(stream, buffer);
+    } 
 
     public static byte ReadExactByte(this Stream stream)
     {

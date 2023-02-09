@@ -11,7 +11,7 @@ new ScriptInterpreter().Run(script, new LogScriptRuntime());
 */
 
 using var stream = TestGamePath.OpenFile("data/bil.gmp");
-var riffReader = new RiffReader(stream);
+using var riffReader = new RiffReader(stream);
 var mapreader = new MapReader(riffReader);
 
 var map2 = mapreader.Read();

@@ -161,28 +161,25 @@ public class RiffChunkStream : Stream
             return;
         }
 
-        if (_reader.ShouldSeekEnd(this))
+        if (CanSeek)
         {
-            if (CanSeek)
-            {
-                Seek(0, SeekOrigin.End);
-            }
-            else
-            {
-                var remainder = RemainingLength;
+            Seek(0, SeekOrigin.End);
+        }
+        else
+        {
+            var remainder = RemainingLength;
 
-                if (remainder > 0)
+            if (remainder > 0)
+            {
+                Span<byte> buffer = stackalloc byte[256];
+                while (remainder > 0)
                 {
-                    Span<byte> buffer = stackalloc byte[256];
-                    while (remainder > 0)
-                    {
-                        var read = Read(buffer);
-                        remainder -= read;
+                    var read = Read(buffer);
+                    remainder -= read;
 
-                        if (read == 0)
-                        {
-                            throw new Exception("invalid read");
-                        }
+                    if (read == 0)
+                    {
+                        throw new Exception("invalid read");
                     }
                 }
             }

@@ -6,16 +6,16 @@ namespace OpenGta2.Data.Map
 {
     public class MapReader
     {
-        private readonly RiffReader _reader;
+        private readonly RiffReader _riffReader;
 
-        public MapReader(RiffReader reader)
+        public MapReader(RiffReader riffReader)
         {
-            if (reader.Type != "GBMP" || reader.Version != 500)
+            if (riffReader.Type != "GBMP" || riffReader.Version != 500)
             {
                 throw new Exception("unsupported map file");
             }
 
-            _reader = reader;
+            _riffReader = riffReader;
         }
 
         public Map Read()
@@ -27,32 +27,32 @@ namespace OpenGta2.Data.Map
             MapZone[] zones;
             TileAnimation[] animations;
 
-            using (var compressedMapChunk = _reader.GetChunk("DMAP") ?? throw new Exception("Missing map data"))
+            using (var compressedMapChunk = _riffReader.GetChunk("DMAP") ?? throw new Exception("Missing map data"))
             {
                 map = ParseMap(compressedMapChunk);
             }
 
-            using (var objectsChunk = _reader.GetChunk("MOBJ"))
+            using (var objectsChunk = _riffReader.GetChunk("MOBJ"))
             {
                 objects = ParseMapObjects(objectsChunk);
             }
 
-            using (var zonesChunk = _reader.GetChunk("ZONE"))
+            using (var zonesChunk = _riffReader.GetChunk("ZONE"))
             {
                 zones = ParseMapZones(zonesChunk);
             }
 
-            using (var animationsChunk = _reader.GetChunk("ANIM"))
+            using (var animationsChunk = _riffReader.GetChunk("ANIM"))
             {
                 animations = ParseAnimations(animationsChunk);
             }
 
-            using (var junctionsChunk = _reader.GetChunk("RGEN"))
+            using (var junctionsChunk = _riffReader.GetChunk("RGEN"))
             {
                 // TODO
             }
 
-            using (var lightsChunk = _reader.GetChunk("LGHT"))
+            using (var lightsChunk = _riffReader.GetChunk("LGHT"))
             {
                 // TODO
             }
