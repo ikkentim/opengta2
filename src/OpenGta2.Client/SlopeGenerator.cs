@@ -6,7 +6,7 @@ using OpenGta2.Data.Map;
 
 namespace OpenGta2.Client;
 
-public class SlopeGenerator
+public static class SlopeGenerator
 {
     private static readonly Matrix MatrixUp = Matrix.Identity;
     private static readonly Matrix MatrixRight = Matrix.CreateRotationZ(MathF.PI / 2) * Matrix.CreateTranslation(1, 0, 0);
@@ -367,7 +367,7 @@ public class SlopeGenerator
         }
     }
 
-    public void Push(ref BlockInfo block, int z, List<VertexPositionColor> vertices, List<short> indices)
+    public static void Push(ref BlockInfo block, int z, List<VertexPositionColor> vertices, List<short> indices)
     {
         switch (block.SlopeType.SlopeType)
         {
