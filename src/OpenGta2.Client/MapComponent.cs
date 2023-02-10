@@ -29,9 +29,9 @@ public class MapComponent : DrawableGameComponent
     protected override void LoadContent()
     {
         // for now simple buffers for drawing a single face. will optimize this later.
-        vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColor), 4 * 5, BufferUsage.WriteOnly);
+        vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionTexture), 4 * 5, BufferUsage.WriteOnly);
         indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), 6 * 5, BufferUsage.WriteOnly);
-        _tilesTexture = new Texture2D(GraphicsDevice, 2048, 2048, true, SurfaceFormat.Color);
+        _tilesTexture = new Texture2D(GraphicsDevice, 2048, 2048, false, SurfaceFormat.Color);
 
         CreateTilesTexture();
     }
@@ -50,7 +50,7 @@ public class MapComponent : DrawableGameComponent
             var physicalPaletteNumber = _style.PaletteIndex.PhysPalette[tileNumber];
             
             var palette = _style.PhysicsalPalette.GetPalette(physicalPaletteNumber);
-            var rowIndex = tileNumber % 32;
+            var colNum = tileNumber % 32;
             var rowNum = tileNumber / 32;
 
             for (var y = 0; y < Tiles.TileHeight; y++)
@@ -63,7 +63,7 @@ public class MapComponent : DrawableGameComponent
                 }
             }
 
-            var textureRect = new Rectangle(rowIndex * Tiles.TileWidth, rowNum * Tiles.TileHeight, Tiles.TileWidth,
+            var textureRect = new Rectangle(colNum * Tiles.TileWidth, rowNum * Tiles.TileHeight, Tiles.TileWidth,
                 Tiles.TileHeight);
             _tilesTexture!.SetData(0, textureRect, tileData, 0, tileData.Length);
         }
@@ -74,19 +74,22 @@ public class MapComponent : DrawableGameComponent
     
     public override void Draw(GameTime gameTime)
     {
-        _game.BasicEffect.VertexColorEnabled = true;
+        _game.BasicEffect.TextureEnabled = true;
         _game.BasicEffect.View = _camera.ViewMatrix;
         _game.BasicEffect.Projection = _game.Projection;
+        _game.BasicEffect.LightingEnabled = false;
+        _game.BasicEffect.Texture = _tilesTexture;
+        _game.BasicEffect.FogEnabled = false;
         _game.GraphicsDevice.Indices = indexBuffer;
         _game.GraphicsDevice.SetVertexBuffer(vertexBuffer);
-
+        // _game.GraphicsDevice.BlendState = BlendState.AlphaBlend; // TODO: handle alpha in a shader
 
         var map = _map.CompressedMap;
 
         var maxX = _map.Width;
         var maxY = _map.Height;
 
-        var vertices = new List<VertexPositionColor>();
+        var vertices = new List<VertexPositionTexture>();
         var indices = new List<short>();
 
         for (var x = 0; x < maxX; x++)
@@ -111,7 +114,7 @@ public class MapComponent : DrawableGameComponent
                 var blockNum = column.Blocks[z - column.Offset];
                 ref var block = ref map.Blocks[blockNum];
 
-                SlopeGenerator.Push(ref block, z, vertices, indices);
+                SlopeGenerator.Push(ref block, vertices, indices);
 
                 if (indices.Count > 0)
                 {
@@ -120,7 +123,6 @@ public class MapComponent : DrawableGameComponent
                     indexBuffer!.SetData(indices.ToArray());
 
                     _game.BasicEffect.World = Matrix.CreateTranslation(new Vector3(x, y, z));
-
                     foreach (var pass in _game.BasicEffect.CurrentTechnique.Passes)
                     {
                         pass.Apply();

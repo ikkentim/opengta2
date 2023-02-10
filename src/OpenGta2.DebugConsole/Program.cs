@@ -19,30 +19,10 @@ var map2 = mapreader.Read();
 Console.WriteLine(map2);
 
 
-Console.WriteLine("SLOPE TESTING");
-
 var map = map2.CompressedMap;
+var col = map.Columns[map.Base[1, 4]];
 
-var maxY = map.Base.GetLength(0);
-var maxX = map.Base.GetLength(1);
-        
-for (var x = 0; x < maxX; x++)
-for (var y = 0; y < maxY; y++)
-{
-
-    // read compressed map and render column
-    var columnNum = map.Base[y, x];
-    var column = map.Columns[columnNum];
-
-    for (var z = column.Offset; z < column.Height; z++)
-    {
-        var blockNum = column.Blocks[z - column.Offset];
-        var block = map.Blocks[blockNum];
-
-        var t = (byte)block.SlopeType.SlopeType;
-        if (t > 0 && t < 4)
-        {
-            Console.WriteLine($@"{x},{y},{z} slope {block.SlopeType.SlopeType}");
-        }
-    }
-}
+var bNum = col.Blocks.Last();
+var block = map.Blocks[bNum];
+Console.WriteLine(block.Lid.TileGraphic);
+Console.WriteLine("test");

@@ -20,7 +20,8 @@ public struct BgraColor
             }
 
             // alpha channel is unused
-            return (uint)(0xFF000000 | (R << 16 | G << 8 | B));
+            // return (uint)(A << 24 | (B << 16 | G << 8 | R));
+            return (uint)(0xff000000u | (B << 16 | G << 8 | R));
         }
     }
 }
