@@ -1,6 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
-using OpenGta2.Data.Map;
 
 namespace OpenGta2.Data;
 
@@ -8,7 +8,7 @@ internal static class StreamExtensions
 {
     public static string ReadExactString(this Stream stream, byte length)
     {
-        return TryReadExactString(stream, length) ?? throw new Exception("bad read");
+        return TryReadExactString(stream, length) ?? throw ThrowHelper.GetUnexpectedEndOfStream();
     }
 
     public static string? TryReadExactString(this Stream stream, byte length)
@@ -42,7 +42,7 @@ internal static class StreamExtensions
 
         if (length != 2)
         {
-            throw new Exception("bad read");
+            ThrowHelper.ThrowUnexpectedEndOfStream();
         }
         return d;
     }
@@ -55,8 +55,9 @@ internal static class StreamExtensions
 
         if (length != 4)
         {
-            throw new Exception("bad read");
+            ThrowHelper.ThrowUnexpectedEndOfStream();
         }
+
         return d;
     }
 
@@ -66,7 +67,7 @@ internal static class StreamExtensions
 
         if (read != span.Length)
         {
-            throw new Exception("bad read");
+            ThrowHelper.ThrowUnexpectedEndOfStream();
         }
 
         return read;
@@ -75,8 +76,15 @@ internal static class StreamExtensions
     public static int ReadExact<T>(this Stream stream, Span<T> span) where T : struct
     {
         var buffer = MemoryMarshal.Cast<T, byte>(span);
-        return ReadExact(stream, buffer);
-    } 
+        return ReadExact(stream, buffer) / Marshal.SizeOf<T>();
+    }
+    
+    public static void ReadExact<T>(this Stream stream, out T value) where T : struct
+    {
+        value = new T();
+        var span = MemoryMarshal.CreateSpan(ref value, 1);
+        ReadExact(stream, span);
+    }
 
     public static byte ReadExactByte(this Stream stream)
     {
@@ -84,7 +92,7 @@ internal static class StreamExtensions
 
         if (b < 0)
         {
-            throw new Exception("bad read");
+            ThrowHelper.ThrowUnexpectedEndOfStream();
         }
 
         return (byte)b;

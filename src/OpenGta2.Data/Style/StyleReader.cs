@@ -6,13 +6,15 @@ namespace OpenGta2.Data.Style
 {
     public class StyleReader
     {
+        private const int SupportedVersion = 700;
+
         private readonly RiffReader _riffReader;
 
         public StyleReader(RiffReader riffReader)
         {
-            if (riffReader.Type != "GBST" || riffReader.Version != 700)
+            if (riffReader.Type != "GBST" || riffReader.Version != SupportedVersion)
             {
-                throw new Exception("unsupported style file");
+                ThrowHelper.ThrowInvalidFileFormat();
             }
 
             _riffReader = riffReader;
@@ -30,40 +32,16 @@ namespace OpenGta2.Data.Style
 
         private PaletteBase ReadPaletteBase()
         {
-            var chunk = _riffReader.GetChunk("PALB");
-
-            if (chunk == null)
-            {
-                throw new Exception("Missing palette base");
-            }
-            
-            Span<byte> buffer = stackalloc byte[Marshal.SizeOf<PaletteBase>()];
-
-            if (chunk.Stream.Length != buffer.Length)
-            {
-                throw new Exception("bad pallet base length");
-            }
-
-            chunk.Stream.ReadExact(buffer);
-            return MemoryMarshal.Read<PaletteBase>(buffer);
+            using var chunk = _riffReader.GetRequiredChunk("PALB", Marshal.SizeOf<PaletteBase>());
+            chunk.Stream.ReadExact(out PaletteBase result);
+            return result;
         }
 
         private PaletteIndex ReadPaletteIndex()
         {
-            var chunk = _riffReader.GetChunk("PALX");
-
-            if (chunk == null)
-            {
-                throw new Exception("Missing palette index");
-            }
-
-            if (chunk.Stream.Length != PaletteIndex.PhysPaletteLength * 2)
-            {
-                throw new InvalidOperationException("bad pallet index size");
-            }
-
-            var physPalette = new ushort[PaletteIndex.PhysPaletteLength];
+            using var chunk = _riffReader.GetRequiredChunk("PALX", PaletteIndex.PhysPaletteLength * 2);
             
+            var physPalette = new ushort[PaletteIndex.PhysPaletteLength];
             chunk.Stream.ReadExact(physPalette.AsSpan());
 
             return new PaletteIndex(physPalette);
@@ -71,13 +49,8 @@ namespace OpenGta2.Data.Style
 
         private PhysicalPalette ReadPhysicalPalettes()
         {
-            var chunk = _riffReader.GetChunk("PPAL");
-
-            if (chunk == null)
-            {
-                throw new Exception("Missing physical palettes");
-            }
-
+            var chunk = _riffReader.GetRequiredChunk("PPAL");
+            
             var paletteSize = chunk.Stream.Length / Marshal.SizeOf<uint>();
             var palette = new BgraColor[paletteSize];
             chunk.Stream.ReadExact(palette.AsSpan());
@@ -87,15 +60,11 @@ namespace OpenGta2.Data.Style
         
         private Tiles ReadTiles()
         {
-            using var chunk = _riffReader.GetChunk("TILE");
-
-            if (chunk == null)
-            {
-                throw new Exception("Missing tiles");
-            }
-
+            using var chunk = _riffReader.GetRequiredChunk("TILE");
+            
             var data = new byte[chunk.Stream.Length];
             chunk.Stream.ReadExact(data);
+
             return new Tiles(data);
         }
     }

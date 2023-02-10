@@ -19,7 +19,6 @@ public class ScriptParser
 
         var pointers = ReadPointers(stream);
         var scriptData = ReadScript(stream);
-
         var strings = ReadStrings(stream);
 
         return new Script(pointers, scriptData, strings);
@@ -28,30 +27,14 @@ public class ScriptParser
     private static ushort[] ReadPointers(Stream stream)
     {
         var pointers = new ushort[6000];
-        var bPointers = MemoryMarshal.Cast<ushort, byte>(pointers.AsSpan());
-
-        Debug.Assert(bPointers.Length == 12000);
-
-        var length = stream.Read(bPointers);
-
-        if (length != bPointers.Length)
-        {
-            throw new Exception("bad read");
-        }
-
+        stream.ReadExact(pointers.AsSpan());
         return pointers;
     }
 
     private static byte[] ReadScript(Stream stream)
     {
         var scriptData = new byte[65536];
-        var length = stream.Read(scriptData.AsSpan());
-
-        if (length != scriptData.Length)
-        {
-            throw new Exception("bad read");
-        }
-
+        stream.ReadExact(scriptData.AsSpan());
         return scriptData;
     }
 
@@ -63,16 +46,22 @@ public class ScriptParser
 
         while (read < tableLength)
         {
-            var id = stream.ReadExactDoubleWord();
-            var type = (StringType)stream.ReadExactDoubleWord();
-            var length = stream.ReadExactByte();
-            var value = stream.ReadExactString(length);
+            stream.ReadExact(out StringHeader header);
+            var value = stream.ReadExactString(header.Length);
 
-            read += 9 + length;
+            strings[header.Id] = new StringValue(header.Type, header.Length, value);
 
-            strings[id] = new StringValue(type, length, value);
+            read += 9 + header.Length;
         }
 
         return new StringTable(strings);
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    private readonly struct StringHeader
+    {
+        [FieldOffset(0)] public readonly uint Id;
+        [FieldOffset(4)] public readonly StringType Type;
+        [FieldOffset(8)] public readonly byte Length;
     }
 }

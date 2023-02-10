@@ -31,7 +31,7 @@ for (var y = 0; y < maxY; y++)
 {
 
     // read compressed map and render column
-    var columnNum = map.Base[x, y];
+    var columnNum = map.Base[y, x];
     var column = map.Columns[columnNum];
 
     for (var z = column.Offset; z < column.Height; z++)

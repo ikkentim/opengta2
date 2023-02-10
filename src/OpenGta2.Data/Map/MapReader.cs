@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using OpenGta2.Data.Riff;
 
@@ -6,13 +8,15 @@ namespace OpenGta2.Data.Map
 {
     public class MapReader
     {
+        private const int SupportedVersion = 500;
+
         private readonly RiffReader _riffReader;
 
         public MapReader(RiffReader riffReader)
         {
-            if (riffReader.Type != "GBMP" || riffReader.Version != 500)
+            if (riffReader.Type != "GBMP" || riffReader.Version != SupportedVersion)
             {
-                throw new Exception("unsupported map file");
+                ThrowHelper.ThrowInvalidFileFormat();
             }
 
             _riffReader = riffReader;
@@ -27,7 +31,7 @@ namespace OpenGta2.Data.Map
             MapZone[] zones;
             TileAnimation[] animations;
 
-            using (var compressedMapChunk = _riffReader.GetChunk("DMAP") ?? throw new Exception("Missing map data"))
+            using (var compressedMapChunk = _riffReader.GetRequiredChunk("DMAP"))
             {
                 map = ParseMap(compressedMapChunk);
             }
@@ -69,16 +73,14 @@ namespace OpenGta2.Data.Map
                 return Array.Empty<TileAnimation>();
             
             var stream = chunk.Stream;
-
-            Span<byte> buffer = stackalloc byte[Marshal.SizeOf<TileAnimationHeader>()];
+            
             Span<byte> tilesBuffer = stackalloc byte[512];
 
             var result = new List<TileAnimation>();
             while (stream.Position < stream.Length)
             {
-                stream.ReadExact(buffer);
-
-                var header = MemoryMarshal.Read<TileAnimationHeader>(buffer);
+                stream.ReadExact(out TileAnimationHeader header);
+                
                 var tilesBytes = tilesBuffer[..(header.AnimLength * 2)];
                 stream.ReadExact(tilesBytes);
                 var tiles = MemoryMarshal.Cast<byte, ushort>(tilesBytes);
@@ -95,16 +97,14 @@ namespace OpenGta2.Data.Map
                 return Array.Empty<MapZone>();
 
             var stream = chunk.Stream;
-
-            Span<byte> buffer = stackalloc byte[Marshal.SizeOf<MapZoneHeader>()];
+            
             Span<byte> nameBuffer = stackalloc byte[256];
             
             var result = new List<MapZone>();
             while (stream.Position < stream.Length)
             {
-                stream.ReadExact(buffer);
-
-                var header = MemoryMarshal.Read<MapZoneHeader>(buffer);
+                stream.ReadExact(out MapZoneHeader header);
+                
                 var name = nameBuffer[..header.NameLength];
                 stream.ReadExact(name);
 
@@ -118,20 +118,11 @@ namespace OpenGta2.Data.Map
         {
             if (chunk == null)
                 return Array.Empty<MapObject>();
-
-            var stream = chunk.Stream;
-
-            Span<byte> buffer = stackalloc byte[Marshal.SizeOf<MapObject>()];
-
-            var count = stream.Length / buffer.Length;
+            
+            var count = chunk.Stream.Length / Marshal.SizeOf<MapObject>();
 
             var result = new MapObject[count];
-            for (var i = 0; i < count; i++)
-            {
-                stream.ReadExact(buffer);
-
-                result[i] = MemoryMarshal.Read<MapObject>(buffer);
-            }
+            chunk.Stream.ReadExact(result.AsSpan());
 
             return result;
         }
@@ -140,6 +131,7 @@ namespace OpenGta2.Data.Map
         {
             var stream = chunk.Stream;
 
+            // the map data consists of the following structs (along with defined structs):
             // struct compressed_map
             // {
             //     UInt32 base [256][256];
@@ -148,17 +140,6 @@ namespace OpenGta2.Data.Map
             //     UInt32 num_blocks;
             //     block_info block[variable size – num_blocks];
             // }
-            
-            // base[256][256]
-            var @base = new uint[MapWidth, MapHeight];
-
-            for(var y = 0; y <MapHeight;y++)
-            for (var x = 0; x < MapWidth; x++)
-            {
-                @base[x, y] = stream.ReadExactDoubleWord();
-            }
-
-            // read columns
 
             // struct col_info
             // {
@@ -168,6 +149,18 @@ namespace OpenGta2.Data.Map
             //     UInt32 blockd[variable size – height - offset];
             // }
 
+            // read base
+            var @base = new uint[MapHeight, MapWidth];
+            var baseSpan = MemoryMarshal.CreateSpan(ref Unsafe.As<byte, uint>(ref MemoryMarshal.GetArrayDataReference(@base)), @base.Length);
+            stream.ReadExact(baseSpan);
+
+            // for(var y = 0; y <MapHeight;y++)
+            // for (var x = 0; x < MapWidth; x++)
+            // {
+            //     @base[y, x] = stream.ReadExactDoubleWord();
+            // }
+
+            // read columns
             var columnDoubleWords = stream.ReadExactDoubleWord();
             var columnsStart = stream.Position;
             var columnsEnd = columnsStart + columnDoubleWords * 4;
@@ -193,16 +186,8 @@ namespace OpenGta2.Data.Map
             }
 
             // read blocks
-            var blockCount = stream.ReadExactDoubleWord();
-            var blocks = new BlockInfo[blockCount];
-            
-            Span<byte> blockBuffer = stackalloc byte[Marshal.SizeOf<BlockInfo>()];
-
-            for (var i = 0; i < blockCount; i++)
-            {
-                stream.ReadExact(blockBuffer);
-                blocks[i] = MemoryMarshal.Read<BlockInfo>(blockBuffer);
-            }
+            var blocks = new BlockInfo[stream.ReadExactDoubleWord()];
+            stream.ReadExact(blocks.AsSpan());
 
             return new CompressedMap(@base, columns, blocks);
         }

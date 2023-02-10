@@ -38,7 +38,7 @@ public readonly struct PhysicalPalette
 
         var pageNumber = number / PalettesPerPage;
         var paletteNumber = number - pageNumber * PalettesPerPage;
-        
+
         var page = GetPage((ushort)pageNumber);
         return new Palette(page, (byte)paletteNumber);
     }

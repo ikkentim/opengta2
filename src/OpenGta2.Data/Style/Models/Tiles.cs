@@ -32,12 +32,12 @@ public readonly struct Tiles
         {
             throw new ArgumentOutOfRangeException(nameof(number));
         }
-            
+
         var pageIndex = number / TilesPerPage;
 
         var page = _data.AsSpan(pageIndex * TilePageLength, TilePageLength);
-            
-        var tileIndex = number - (pageIndex * TilesPerPage);
+
+        var tileIndex = number - pageIndex * TilesPerPage;
         var tileRow = tileIndex / TilesPerPageX;
         var tileCol = tileIndex % TilesPerPageX;
 
@@ -46,7 +46,7 @@ public readonly struct Tiles
         var pageX = tileCol * TileWidth;
 
         var start = pageY * TilePageWidth + pageX;
-            
-        return page[start..(start+TileWidth)];
+
+        return page[start..(start + TileWidth)];
     }
 }

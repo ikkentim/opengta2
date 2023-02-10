@@ -5,13 +5,15 @@ namespace OpenGta2.Data;
 
 public class GtaStringReader
 {
+    private const int SupportedVersion = 100;
+
     private readonly RiffReader _reader;
 
     public GtaStringReader(RiffReader reader)
     {
-        if (reader.Type.Substring(0, 3) != "GBL" || reader.Version != 0x64)
+        if (reader.Type[..3] != "GBL" || reader.Version != SupportedVersion)
         {
-            throw new Exception("unsupported string file");
+            ThrowHelper.ThrowInvalidFileFormat();
         }
             
         _reader = reader;
@@ -24,7 +26,7 @@ public class GtaStringReader
         var result = new Dictionary<string, string>();
         
         // read keys
-        var keysChunk = _reader.GetChunk("TKEY") ?? throw new Exception("missing keys");
+        var keysChunk = _reader.GetRequiredChunk("TKEY");
         while (keysChunk.Stream.Position < keysChunk.Stream.Length)
         {
             var dataOffset = keysChunk.Stream.ReadExactDoubleWord();
@@ -33,7 +35,7 @@ public class GtaStringReader
         }
 
         // read data
-        var dataChunk = _reader.GetChunk("TDAT") ?? throw new Exception("missing data");
+        var dataChunk = _reader.GetRequiredChunk("TDAT");
         foreach (var kv in keys)
         {
             dataChunk.Stream.Seek(kv.Value, SeekOrigin.Begin);

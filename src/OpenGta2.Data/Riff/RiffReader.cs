@@ -96,8 +96,7 @@ public sealed class RiffReader : IDisposable
     
     public void Dispose()
     {
-        _activeChunkStream?.Dispose();
-        _activeChunkStream = null;
+        CloseActiveChunk();
         _isDisposed = true;
     }
     
@@ -108,5 +107,4 @@ public sealed class RiffReader : IDisposable
             throw new ObjectDisposedException(nameof(RiffReader));
         }
     }
-    
 }
