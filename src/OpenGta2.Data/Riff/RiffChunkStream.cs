@@ -101,7 +101,7 @@ public class RiffChunkStream : Stream
                     throw new ArgumentOutOfRangeException(nameof(offset), offset,
                         "Offset should be a negative number les than the length of the stream");
 
-                _position = _innerStream.Seek(_start + _length + _position, SeekOrigin.Begin) - _start;
+                _position = _innerStream.Seek(_start + _length, SeekOrigin.Begin) - _start;
                 break;
             default:
                 throw new InvalidOperationException();

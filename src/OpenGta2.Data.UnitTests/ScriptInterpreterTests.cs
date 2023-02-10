@@ -6,6 +6,7 @@ using Xunit;
 
 namespace OpenGta2.Data.UnitTests;
 
+[Trait("Category", "DataTests")]
 public class ScriptInterpreterTests
 {
     [Fact]

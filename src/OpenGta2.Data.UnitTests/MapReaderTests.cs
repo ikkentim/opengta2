@@ -5,17 +5,17 @@ using Xunit;
 
 namespace OpenGta2.Data.UnitTests;
 
-public class MapReaderTests
+[Trait("Category", "DataTests")]
+public class MapReaderTests : RiffFileTestBase<MapReader>
 {
+    public MapReaderTests() : base("data/bil.gmp", riff => new MapReader(riff))
+    {
+    }
+
     [Fact]
     public void Read_should_read_compressed_map()
     {
-        using var stream = TestGamePath.OpenFile("data/bil.gmp");
-        using var riff = new RiffReader(stream);
-
-        var sut = new MapReader(riff);
-
-        var result = sut.Read();
+        var result = Sut.Read();
         
         result.Width.ShouldBe(256);
         result.Height.ShouldBe(256);
@@ -29,12 +29,7 @@ public class MapReaderTests
     [Fact]
     public void Read_should_read_objects()
     {
-        using var stream = TestGamePath.OpenFile("data/bil.gmp");
-        using var riff = new RiffReader(stream);
-
-        var sut = new MapReader(riff);
-
-        var result = sut.Read();
+        var result = Sut.Read();
         
         result.Objects.Length.ShouldBe(0);
     }
@@ -42,12 +37,7 @@ public class MapReaderTests
     [Fact]
     public void Read_should_read_animations()
     {
-        using var stream = TestGamePath.OpenFile("data/bil.gmp");
-        using var riff = new RiffReader(stream);
-
-        var sut = new MapReader(riff);
-
-        var result = sut.Read();
+        var result = Sut.Read();
         
         result.Animations.Length.ShouldBe(16);
         result.Animations[1].Base.ShouldBe<ushort>(243);
@@ -58,12 +48,7 @@ public class MapReaderTests
     [Fact]
     public void Read_should_read_zones()
     {
-        using var stream = TestGamePath.OpenFile("data/bil.gmp");
-        using var riff = new RiffReader(stream);
-
-        var sut = new MapReader(riff);
-
-        var result = sut.Read();
+        var result = Sut.Read();
         
         result.Zones.Length.ShouldBe(189);
         result.Zones[1].Name.ShouldBe("busstop2");

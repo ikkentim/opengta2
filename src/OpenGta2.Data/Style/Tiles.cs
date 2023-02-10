@@ -24,7 +24,7 @@ public readonly struct Tiles
         _data = data;
     }
 
-    public ushort Count => (ushort)(_data.Length / TileLength);
+    public int Count => _data.Length / TileLength;
 
     public Span<byte> GetTileSlice(ushort number, int y)
     {
