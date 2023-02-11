@@ -1,26 +1,22 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
-using System.Drawing;
-using Color = Microsoft.Xna.Framework.Color;
+using Microsoft.Xna.Framework.Input;
 
 namespace OpenGta2.Client;
 
 public class GtaGame : Game
 {
-    private GraphicsDeviceManager _graphics;
+    private readonly GraphicsDeviceManager _graphics;
     private Scene? _activeScene;
-    private BasicEffect? _basicEffect;
-    
+
     public GtaGame()
     {
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-        
     }
     
-    public Matrix Projection => GetProj();
+    public Matrix Projection => GetProjection();
 
     public Matrix ProjectionLhs => Matrix.CreatePerspectiveFieldOfView(
         MathHelper.PiOver4, // 90 fov
@@ -28,7 +24,7 @@ public class GtaGame : Game
         0.1f,
         9000);
     
-    private Matrix GetProj()
+    private Matrix GetProjection()
     {
         var p = ProjectionLhs;
 
@@ -38,12 +34,11 @@ public class GtaGame : Game
 
         return p;
     }
-
-    public BasicEffect BasicEffect => _basicEffect!;
-
+    
     protected override void Initialize()
     {
-        ActivateScene(new TestWorldScene(this));
+        _graphics.GraphicsProfile = GraphicsProfile.HiDef;
+        _graphics.ApplyChanges();
 
         _graphics.PreferredBackBufferWidth = 1920;
         _graphics.PreferredBackBufferHeight = 1080;
@@ -52,10 +47,19 @@ public class GtaGame : Game
         base.Initialize();
     }
 
+    private void FirstUpdate()
+    {
+        // If we'd activate in LoadContent, the component won't initialize.
+        ActivateScene(new TestWorldScene(this));
+    }
+
     protected override void LoadContent()
     {
-        _basicEffect = new BasicEffect(GraphicsDevice);
-        
+        var assetManager = new AssetManager();
+        assetManager.LoadContent(Content);
+
+        Services.AddService(assetManager);
+
         base.LoadContent();
     }
 
@@ -67,14 +71,23 @@ public class GtaGame : Game
         if (_activeScene != null)
         {
             _activeScene.Dispose();
+            Components.Remove(_activeScene);
         }
         
         Components.Add(scene);
         _activeScene = scene;
     }
-    
+
+    private bool _hasReceivedUpdate;
+
     protected override void Update(GameTime gameTime)
     {
+        if (!_hasReceivedUpdate)
+        {
+            _hasReceivedUpdate = true;
+            FirstUpdate();
+        }
+
         if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
         

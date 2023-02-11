@@ -10,18 +10,7 @@ public struct BgraColor
     [FieldOffset(2)] public byte R;
     [FieldOffset(3)] public byte A;
 
-    public uint Argb
-    {
-        get
-        {
-            if ((R | G | B) == 0)
-            {
-                return 0;
-            }
-
-            // alpha channel is unused
-            // return (uint)(A << 24 | (B << 16 | G << 8 | R));
-            return (uint)(0xff000000u | (B << 16 | G << 8 | R));
-        }
-    }
+    public uint Argb =>
+        // alpha channel is unused
+        (uint)(0xff000000u | (B << 16 | G << 8 | R));
 }

@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Data.Map;
-using SharpDX.MediaFoundation;
 
 namespace OpenGta2.Client;
 
@@ -67,7 +64,7 @@ public static class SlopeGenerator
         }
     }
 
-    private static Vector2 MapUv(ushort tileGraphic, Rotation rotation, Rotation rotationBlock, bool flip, float x, float y)
+    private static Vector3 MapUv(ushort tileGraphic, Rotation rotation, Rotation rotationBlock, bool flip, float x, float y)
     {
         if (flip)
         {
@@ -109,11 +106,7 @@ public static class SlopeGenerator
                 break;
         }
         
-        // on the texture map, the tiles are mapped in a 32x32, each tile having 16x16 pixels.
-        var rowNum = tileGraphic / 32;
-        var colNum = tileGraphic % 32;
-
-        return new Vector2(x / 32 + colNum * (1f / 32), y / 32 + rowNum * (1f / 32));
+        return new Vector3(x, y, tileGraphic);
     }
     
     private static void RemapFaces(ref BlockInfo block, Rotation rotation, out FaceInfo top, out FaceInfo bottom, out FaceInfo left, out FaceInfo right)
@@ -124,7 +117,7 @@ public static class SlopeGenerator
         right = GetFace(ref block, Face.Right, rotation);
     }
 
-    private static void SlopeNone(ref BlockInfo block, Rotation rotation, List<VertexPositionTexture> vertices,
+    private static void SlopeNone(ref BlockInfo block, Rotation rotation, List<VertexPositionTile> vertices,
         List<short> indices)
     {
         var translation = GetTranslation(rotation);
@@ -134,10 +127,10 @@ public static class SlopeGenerator
         if (block.Lid.TileGraphic != 0)
         {
             var start = vertices.Count;
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 0), block.Lid.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 1), block.Lid.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 1), block.Lid.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -151,10 +144,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 0), left.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 0), left.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1), left.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1), left.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -168,10 +161,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 0), right.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 0), right.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1), right.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1), right.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -185,10 +178,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
             
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 0), top.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 0), top.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1), top.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1), top.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -202,10 +195,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 0), bottom.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 0), bottom.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1), bottom.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1), bottom.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -216,7 +209,7 @@ public static class SlopeGenerator
         }
     }
 
-    private static void SlopeDiagonal(ref BlockInfo block, Rotation rotation, List<VertexPositionTexture> vertices, List<short> indices)
+    private static void SlopeDiagonal(ref BlockInfo block, Rotation rotation, List<VertexPositionTile> vertices, List<short> indices)
     {
         var translation = GetTranslation(rotation);
 
@@ -227,9 +220,9 @@ public static class SlopeGenerator
         if (block.Lid.TileGraphic != 0)
         {
             var start = vertices.Count;
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -240,10 +233,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 0), left.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 0), left.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1), left.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1), left.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -258,10 +251,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 0), right.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 0), right.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1), right.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1), right.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -275,10 +268,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 0), top.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 0), top.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1), top.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1), top.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -292,10 +285,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 0), bottom.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 0), bottom.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1), bottom.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1), bottom.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -306,7 +299,7 @@ public static class SlopeGenerator
         }
     }
 
-    private static void SlopeN(ref BlockInfo block, Rotation rotation, List<VertexPositionTexture> vertices,
+    private static void SlopeN(ref BlockInfo block, Rotation rotation, List<VertexPositionTile> vertices,
         List<short> indices, float slopeFrom, float slopeTo)
     {
         var translation = GetTranslation(rotation);
@@ -318,10 +311,10 @@ public static class SlopeGenerator
         if (block.Lid.TileGraphic != 0)
         {
             var start = vertices.Count;
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 0)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 0), block.Lid.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 1), block.Lid.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 1), block.Lid.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -336,9 +329,9 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1-slopeTo)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1-slopeFrom)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1-slopeTo), left.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1-slopeFrom), left.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1), left.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -346,7 +339,7 @@ public static class SlopeGenerator
 
             if (slopeFrom != 0)
             {
-                vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1)));
+                vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1), left.Flat));
                 indices.Add((short)(start + 1));
                 indices.Add((short)(start + 3));
                 indices.Add((short)(start + 2));
@@ -359,12 +352,12 @@ public static class SlopeGenerator
 
             if (slopeFrom != 0)
             {
-                vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1 - slopeFrom)));
+                vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1 - slopeFrom), right.Flat));
             }
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1-slopeTo)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1-slopeTo), right.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1), right.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1), right.Flat));
 
 
             if (slopeFrom != 0)
@@ -389,10 +382,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1-slopeTo)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1-slopeTo)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1-slopeTo), top.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1-slopeTo), top.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1), top.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1), top.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -406,10 +399,10 @@ public static class SlopeGenerator
         {
             var start = vertices.Count;
 
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1-slopeFrom)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1-slopeFrom)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1)));
-            vertices.Add(new VertexPositionTexture(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1)));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1-slopeFrom), bottom.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1-slopeFrom), bottom.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1), bottom.Flat));
+            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1), bottom.Flat));
 
             indices.Add((short)(start + 0));
             indices.Add((short)(start + 1));
@@ -420,7 +413,7 @@ public static class SlopeGenerator
         }
     }
 
-    public static void Push(ref BlockInfo block, List<VertexPositionTexture> vertices, List<short> indices)
+    public static void Push(ref BlockInfo block, List<VertexPositionTile> vertices, List<short> indices)
     {
         switch (block.SlopeType.SlopeType)
         {

@@ -21,6 +21,13 @@ public class TestWorldScene : Scene
 
     public override void Update(GameTime gameTime)
     {
+        UpdateCamera(gameTime);
+
+        base.Update(gameTime);
+    }
+
+    private void UpdateCamera(GameTime gameTime)
+    {
         // Basic camera controls for testing
         var kb = Keyboard.GetState();
         var cameraInput = Vector3.Zero;
@@ -55,13 +62,12 @@ public class TestWorldScene : Scene
 
         Camera.Position += cameraInput * gameTime.GetDelta() * (Camera.Position.Z * 0.4f);
         Camera.Frustum.Matrix = Camera.ViewMatrix * Game.ProjectionLhs;
-
-        base.Update(gameTime);
     }
 
     public override void Initialize()
     {
         // Loading should probably happen in a loading scene.
+
         using var mapStream = TestGamePath.OpenFile("data/bil.gmp");
         using var mapRiffReader = new RiffReader(mapStream);
         var mapreader = new MapReader(mapRiffReader);
