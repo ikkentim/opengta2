@@ -10,8 +10,17 @@
 matrix WorldViewProjection;
 
 Texture2DArray<float4> Tiles : register(t0);
-sampler TilesSampler : register(s0);
 
+sampler TilesSampler : register(s0) =
+sampler_state
+{
+    Texture = <Tiles>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
 
 struct VertexShaderInput
 {
@@ -43,7 +52,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 
     if (input.Transparancy > 0)
     {
-        clip(color.r + color.g + color.b - 0.1);
+        clip(color.r + color.g + color.b - 0.05);
     }
     
     return float4(color.r, color.g, color.b, 1);

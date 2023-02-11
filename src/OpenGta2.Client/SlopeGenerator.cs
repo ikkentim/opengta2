@@ -530,10 +530,14 @@ public static class SlopeGenerator
             case SlopeType.PartialBlockBottomLeftCorner:
             case SlopeType.PartialBlockBottomRightCorner:
             case SlopeType.PartialBlockCentre:
-
+                // TODO partial blocks
+                // TODO: diagonal slopes
+                SlopeNone(ref block, Rotation.Rotate0, vertices, indices);
+                break;
             case SlopeType.Reserved:
-            case SlopeType.SlopeAbove:
+                break;
             default:
+            case SlopeType.SlopeAbove:
             case SlopeType.None:
                 SlopeNone(ref block, Rotation.Rotate0, vertices, indices);
                 break;

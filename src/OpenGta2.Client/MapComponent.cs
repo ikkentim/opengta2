@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Windows.Forms;
+﻿using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Data.Map;
 using OpenGta2.Data.Style;
-using SharpDX.Direct2D1.Effects;
 
 namespace OpenGta2.Client;
 
@@ -19,9 +15,7 @@ public class MapComponent : DrawableGameComponent
     private VertexBuffer? vertexBuffer;
     private IndexBuffer? indexBuffer;
     private Texture2D? _tilesTexture;
-    private Texture2D? _tilesTexture2;
     private BlockFaceEffect? _blockFaceEffect;
-    private BasicEffect? _basicEffect;
 
     public MapComponent(GtaGame game, Camera camera, Map map, Style style) : base(game)
     {
@@ -33,41 +27,35 @@ public class MapComponent : DrawableGameComponent
 
     protected override void LoadContent()
     {
-        // for now simple buffers for drawing a single face. will optimize this later.
         vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionTile), 4 * 5, BufferUsage.WriteOnly);
-        // vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionTexture), 4 * 5, BufferUsage.WriteOnly);
-
         indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), 6 * 5, BufferUsage.WriteOnly);
-        _tilesTexture = new Texture2D(GraphicsDevice, 2048, 2048, false, SurfaceFormat.Color);
+
         _blockFaceEffect = _game.Services.GetService<AssetManager>()
             .CreateBlockFaceEffect();
-
-        _basicEffect = new BasicEffect(GraphicsDevice);
-
+        
         CreateTilesTexture();
         
-        _blockFaceEffect.Tiles = _tilesTexture2!;
+        _blockFaceEffect.Tiles = _tilesTexture!;
     }
 
     private void CreateTilesTexture()
     {
+        // TODO: Move texture generation somewhere else, where we can also generate textures for the spritemaps.
+        // TODO: Switch to loading each page as a texture in the texture array instead of each separate tile.
+        // This would load more efficiently and makes no difference in rendering.
         var tileCount = _style.Tiles.Count;
 
-        _tilesTexture2 = new Texture2D(GraphicsDevice, Tiles.TileWidth, Tiles.TileHeight, false, SurfaceFormat.Color,
+        _tilesTexture = new Texture2D(GraphicsDevice, Tiles.TileWidth, Tiles.TileHeight, true, SurfaceFormat.Color,
             tileCount);
 
-        // style can contain up to 992 tiles, each tile is 64x64 pixels. we're going to draw each tile
-        // on a single 2048x2048 texture map. the texture map will provide room for 32x32 tiles.
+        // style can contain up to 992 tiles, each tile is 64x64 pixels.
         var tileData = new uint[Tiles.TileWidth * Tiles.TileHeight];
 
         for (ushort tileNumber = 0; tileNumber < tileCount; tileNumber++)
         {
             // don't need to add a base for virtual palette number - base for tiles is always 0.
             var physicalPaletteNumber = _style.PaletteIndex.PhysPalette[tileNumber];
-            
             var palette = _style.PhysicsalPalette.GetPalette(physicalPaletteNumber);
-            var colNum = tileNumber % 32;
-            var rowNum = tileNumber / 32;
 
             for (var y = 0; y < Tiles.TileHeight; y++)
             {
@@ -81,28 +69,13 @@ public class MapComponent : DrawableGameComponent
                             .Argb;
                 }
             }
-
-            var textureRect = new Rectangle(colNum * Tiles.TileWidth, rowNum * Tiles.TileHeight, Tiles.TileWidth,
-                Tiles.TileHeight);
-            _tilesTexture!.SetData(0, textureRect, tileData, 0, tileData.Length);
-
-            _tilesTexture2.SetData(0, tileNumber, null, tileData, 0, tileData.Length);
+            
+            _tilesTexture.SetData(0, tileNumber, null, tileData, 0, tileData.Length);
         }
-
-        using var stream = File.OpenWrite($"debug{DateTime.Now:HHmmsss}.png");
-        _tilesTexture!.SaveAsPng(stream, 2048, 2048);
     }
     
     public override void Draw(GameTime gameTime)
     {
-        
-        _basicEffect.TextureEnabled = true;
-        _basicEffect.View = _camera.ViewMatrix;
-        _basicEffect.Projection = _game.Projection;
-        _basicEffect.LightingEnabled = false;
-        _basicEffect.Texture = _tilesTexture;
-        _basicEffect.FogEnabled = false;
-
         _blockFaceEffect!.View = _camera.ViewMatrix;
         _blockFaceEffect.Projection = _game.Projection;
         _game.GraphicsDevice.Indices = indexBuffer;
@@ -115,9 +88,10 @@ public class MapComponent : DrawableGameComponent
         var maxY = _map.Height;
 
         var vertices = new List<VertexPositionTile>();
-        // var vertices = new List<VertexPositionTexture>();
         var indices = new List<short>();
 
+        // TODO: Separate the map into segments. When a segment enters the view frustum, load the segment into vram
+        // This would allow the map to stay in memory, and we wouldn't have to regenerate the vertices each draw call.
         for (var x = 0; x < maxX; x++)
         for (var y = 0; y < maxY; y++)
         {
@@ -149,9 +123,8 @@ public class MapComponent : DrawableGameComponent
                     indexBuffer!.SetData(indices.ToArray());
 
                     _blockFaceEffect.World = Matrix.CreateTranslation(new Vector3(x, y, z));
-                    // _basicEffect.World = Matrix.CreateTranslation(new Vector3(x, y, z));
 
-                    // foreach (var pass in _basicEffect.CurrentTechnique.Passes)
+                    // TODO: Should render flat tiles in a separate render pass to allow for transparency (instead of clipping)
                     foreach (var pass in _blockFaceEffect.CurrentTechnique.Passes)
                     {
                         pass.Apply();
