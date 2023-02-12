@@ -13,9 +13,10 @@ public class TestWorldScene : Scene
 
     public TestWorldScene(GtaGame game) : base(game)
     {
+        Camera = new Camera(game.Window);
     }
 
-    public Camera Camera { get; } = new();
+    public Camera Camera { get; }
 
     protected Map Map => _map ?? throw new InvalidOperationException();
 
@@ -32,22 +33,22 @@ public class TestWorldScene : Scene
         var kb = Keyboard.GetState();
         var cameraInput = Vector3.Zero;
 
-        if (kb.IsKeyDown(Keys.Right))
+        if (kb.IsKeyDown(Keys.Right) || kb.IsKeyDown(Keys.D))
         {
             cameraInput += GtaVector.Right;
         }
 
-        if (kb.IsKeyDown(Keys.Left))
+        if (kb.IsKeyDown(Keys.Left) || kb.IsKeyDown(Keys.A))
         {
             cameraInput += GtaVector.Left;
         }
         
-        if (kb.IsKeyDown(Keys.Up))
+        if (kb.IsKeyDown(Keys.Up) || kb.IsKeyDown(Keys.W))
         {
             cameraInput += GtaVector.Up;
         }
 
-        if (kb.IsKeyDown(Keys.Down))
+        if (kb.IsKeyDown(Keys.Down) || kb.IsKeyDown(Keys.S))
         {
             cameraInput += GtaVector.Down;
         }
@@ -60,8 +61,13 @@ public class TestWorldScene : Scene
             cameraInput -= GtaVector.Skywards;
         }
 
+        if (kb.IsKeyDown(Keys.LeftControl))
+        {
+            cameraInput *= 2;
+        }
+
         Camera.Position += cameraInput * gameTime.GetDelta() * (Camera.Position.Z * 0.4f);
-        Camera.Frustum.Matrix = Camera.ViewMatrix * Game.ProjectionLhs;
+        Camera.Frustum.Matrix = Camera.ViewMatrix * Camera.ProjectionLhs;
     }
 
     public override void Initialize()

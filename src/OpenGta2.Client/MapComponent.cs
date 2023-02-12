@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using OpenGta2.Client.Effects;
 using OpenGta2.Data.Map;
+using OpenGta2.Data.Riff;
 using OpenGta2.Data.Style;
 
 namespace OpenGta2.Client;
@@ -45,7 +49,7 @@ public class MapComponent : DrawableGameComponent
         // This would load more efficiently and makes no difference in rendering.
         var tileCount = _style.Tiles.Count;
 
-        _tilesTexture = new Texture2D(GraphicsDevice, Tiles.TileWidth, Tiles.TileHeight, true, SurfaceFormat.Color,
+        _tilesTexture = new Texture2D(GraphicsDevice, Tiles.TileWidth, Tiles.TileHeight, false, SurfaceFormat.Color,
             tileCount);
 
         // style can contain up to 992 tiles, each tile is 64x64 pixels.
@@ -77,7 +81,7 @@ public class MapComponent : DrawableGameComponent
     public override void Draw(GameTime gameTime)
     {
         _blockFaceEffect!.View = _camera.ViewMatrix;
-        _blockFaceEffect.Projection = _game.Projection;
+        _blockFaceEffect.Projection = _camera.Projection;
         _game.GraphicsDevice.Indices = indexBuffer;
         _game.GraphicsDevice.SetVertexBuffer(vertexBuffer);
         // _game.GraphicsDevice.BlendState = BlendState.AlphaBlend; // TODO: handle alpha in a shader
@@ -137,3 +141,203 @@ public class MapComponent : DrawableGameComponent
         base.Draw(gameTime);
     }
 }
+
+public class LevelProvider
+{
+    private readonly Vector3[] _cameraCornersBuffer = new Vector3[8];
+
+    private const int ChunkSize = 8;
+    private const int MaxChunksX = 256 / ChunkSize;
+    private const int MaxChunksY = 256 / ChunkSize;
+
+    private readonly GraphicsDevice _graphicsDevice;
+
+    public LevelProvider(GraphicsDevice graphicsDevice)
+    {
+        _graphicsDevice = graphicsDevice;
+    }
+
+    public Map? Map { get; private set; }
+    public Style? Style { get; private set; }
+
+    public bool IsMapLoaded => Map != null && Style != null;
+    
+    public void LoadLevel(string mapFile, string styleFile)
+    {
+        using var mapStream = TestGamePath.OpenFile(mapFile);
+        using var mapRiffReader = new RiffReader(mapStream);
+        var mapreader = new MapReader(mapRiffReader);
+
+        using var styleStream = TestGamePath.OpenFile(styleFile);
+        using var styleRiffReader = new RiffReader(styleStream);
+        var styleReader = new StyleReader(styleRiffReader);
+
+        Map = mapreader.Read();
+        Style = styleReader.Read();
+    }
+
+    private Rectangle _chunkBounds;
+
+    private Dictionary<Point,RenderableMapChunk> _chunks = new();
+
+    public void Update(Camera camera)
+    {
+        // find visible chunks
+        camera.Frustum.GetCorners(_cameraCornersBuffer);
+        var fovBounds = BoundingBox.CreateFromPoints(_cameraCornersBuffer);
+        var minX = (int)MathF.Floor(fovBounds.Min.X);
+        var maxX = MathF.Ceiling(fovBounds.Max.X);
+        var minY = (int)MathF.Floor(fovBounds.Min.Y);
+        var maxY = MathF.Ceiling(fovBounds.Max.Y);
+        
+        // align with chunk bounds
+        var chunkMinX = minX / ChunkSize * ChunkSize;
+        var chunkMinY = minY / ChunkSize * ChunkSize;
+        var chunkMaxX = (int)MathF.Ceiling(maxX / ChunkSize);
+        var chunkMaxY = (int)MathF.Ceiling(maxY / ChunkSize);
+
+        chunkMinX = Math.Clamp(chunkMinX, 0, MaxChunksX);
+        chunkMaxX = Math.Clamp(chunkMaxX, 0, MaxChunksX);
+        chunkMinY = Math.Clamp(chunkMinY, 0, MaxChunksY);
+        chunkMaxY = Math.Clamp(chunkMaxY, 0, MaxChunksY);
+
+        var chunkBounds = new Rectangle(chunkMinX, chunkMaxY, chunkMaxX - chunkMinX, chunkMaxY - chunkMinY);
+
+        // unload invisible chunks
+        for (var x = _chunkBounds.Left; x < _chunkBounds.Right; x++)
+        for (var y = _chunkBounds.Top; y < _chunkBounds.Bottom; y++)
+        {
+            if (chunkBounds.Contains(x, y) || !_chunks.TryGetValue(new Point(x, y), out var chunk))
+                continue;
+
+            UnloadChunk(chunk);
+        }
+
+        // load new visible chunks
+        for (var x = chunkBounds.Left; x < chunkBounds.Right; x++)
+        for (var y = chunkBounds.Top; y < chunkBounds.Bottom; y++)
+        {
+            LoadChunk(x, y);
+        }
+
+        _chunkBounds = chunkBounds;
+    }
+    
+    private readonly BufferArray<short> _indices = new();
+    private readonly BufferArray<VertexPositionTile> _vertices = new();
+
+    private void LoadChunk(int chunkX, int chunkY)
+    {
+        if (_chunks.ContainsKey(new Point(chunkX, chunkY)))
+        {
+            // already loaded
+            return;
+        }
+        
+        var minX = chunkX * ChunkSize;
+        var maxX = minX + ChunkSize;
+        var minY = chunkY * ChunkSize;
+        var maxY = minY + ChunkSize;
+        
+        var map = Map.CompressedMap;
+        
+        for (var x = minX; x < maxX; x++)
+        for (var y = minY; y < maxY; y++)
+        {
+            // read compressed map and render column
+            var column = Map.GetColumn(x, y);
+
+            for (var z = column.Offset; z < column.Height; z++)
+            {
+                var blockNum = column.Blocks[z - column.Offset];
+                ref var block = ref map.Blocks[blockNum];
+
+                SlopeGenerator.Push(ref block, _vertices, _indices);
+            }
+        }
+        
+        var vert = new VertexBuffer(_graphicsDevice, typeof(VertexPositionTile), _vertices.Length,
+            BufferUsage.WriteOnly);
+        var idx = new IndexBuffer(_graphicsDevice, typeof(short), _indices.Length, BufferUsage.WriteOnly);
+        vert.SetData(_vertices.GetArray(), 0, _vertices.Length);
+        idx.SetData(_indices.GetArray(), 0, _indices.Length);
+
+        _chunks[new Point(chunkX, chunkY)] = new RenderableMapChunk(new Point(chunkX, chunkY), vert, idx);
+
+        _vertices.Clear();
+        _indices.Clear();
+    }
+
+    private void UnloadChunk(RenderableMapChunk chunk)
+    {
+        chunk.Indices.Dispose();
+        chunk.Vertices.Dispose();
+
+        _chunks.Remove(chunk.ChunkLocation);
+    }
+}
+
+public class BufferArray<T> : ICollection<T>
+{
+    // TODO: Remove ICollection interface
+
+    private T[] _buffer = new T[16];
+
+    private int _length;
+
+    public int Length => _length;
+
+    public void Reset(bool clear = false)
+    {
+        _length = 0;
+        if (clear)
+        {
+            Array.Clear(_buffer);
+        }
+    }
+
+    private void Resize()
+    {
+        var buffer = new T[_buffer.Length * 2];
+        Array.Copy(_buffer, 0, buffer, 0, _length);
+        _buffer = buffer;
+    }
+
+    public void Add(T value)
+    {
+        if (_buffer.Length == _length)
+        {
+            Resize();
+        }
+
+        _buffer[_length++] = value;
+    }
+
+    public void Clear()
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool Contains(T item) => throw new NotImplementedException();
+
+    public void CopyTo(T[] array, int arrayIndex)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool Remove(T item) => throw new NotImplementedException();
+
+    public int Count => _buffer.Length;
+    public bool IsReadOnly => false;
+
+    public T[] GetArray() => _buffer;
+
+    public Span<T> AsSpan() => _buffer.AsSpan(0, _length);
+
+    public IEnumerator<T> GetEnumerator() => throw new NotImplementedException();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+}
+
+
+public record RenderableMapChunk(Point ChunkLocation, VertexBuffer Vertices, IndexBuffer Indices);

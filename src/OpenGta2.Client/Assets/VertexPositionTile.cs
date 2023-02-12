@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace OpenGta2.Client;
+namespace OpenGta2.Client.Effects;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct VertexPositionTile : IVertexType
@@ -12,7 +12,7 @@ public struct VertexPositionTile : IVertexType
         new VertexElement(4 * 3, VertexElementFormat.Vector3, VertexElementUsage.TextureCoordinate, 0),
         new VertexElement(4 * 6, VertexElementFormat.Single, VertexElementUsage.Color, 0)
     );
-    
+
     VertexDeclaration IVertexType.VertexDeclaration => _declaration;
 
     public Vector3 Position;

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using OpenGta2.Client.Effects;
 
 namespace OpenGta2.Client;
 

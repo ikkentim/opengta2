@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using OpenGta2.Client.Effects;
 using OpenGta2.Data.Map;
 
 namespace OpenGta2.Client;
@@ -117,8 +118,8 @@ public static class SlopeGenerator
         right = GetFace(ref block, Face.Right, rotation);
     }
 
-    private static void SlopeNone(ref BlockInfo block, Rotation rotation, List<VertexPositionTile> vertices,
-        List<short> indices)
+    private static void SlopeNone(ref BlockInfo block, Rotation rotation, ICollection<VertexPositionTile> vertices,
+        ICollection<short> indices)
     {
         var translation = GetTranslation(rotation);
 
@@ -209,7 +210,7 @@ public static class SlopeGenerator
         }
     }
 
-    private static void SlopeDiagonal(ref BlockInfo block, Rotation rotation, List<VertexPositionTile> vertices, List<short> indices)
+    private static void SlopeDiagonal(ref BlockInfo block, Rotation rotation, ICollection<VertexPositionTile> vertices, ICollection<short> indices)
     {
         var translation = GetTranslation(rotation);
 
@@ -299,8 +300,8 @@ public static class SlopeGenerator
         }
     }
 
-    private static void SlopeN(ref BlockInfo block, Rotation rotation, List<VertexPositionTile> vertices,
-        List<short> indices, float slopeFrom, float slopeTo)
+    private static void SlopeN(ref BlockInfo block, Rotation rotation, ICollection<VertexPositionTile> vertices,
+        ICollection<short> indices, float slopeFrom, float slopeTo)
     {
         var translation = GetTranslation(rotation);
 
@@ -413,7 +414,7 @@ public static class SlopeGenerator
         }
     }
 
-    public static void Push(ref BlockInfo block, List<VertexPositionTile> vertices, List<short> indices)
+    public static void Push(ref BlockInfo block, ICollection<VertexPositionTile> vertices, ICollection<short> indices)
     {
         switch (block.SlopeType.SlopeType)
         {

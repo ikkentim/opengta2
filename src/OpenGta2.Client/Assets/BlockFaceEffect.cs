@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace OpenGta2.Client;
+namespace OpenGta2.Client.Effects;
 
 public class BlockFaceEffect : Effect, IEffectMatrices
 {
@@ -10,7 +10,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     private readonly EffectParameter _tilesParam;
 
     private DirtyFlags _dirtyFlags;
-    
+
     private Matrix _projection;
     private Matrix _view;
     private Matrix _world;
@@ -21,7 +21,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
         _worldViewProjectionParam = Parameters["WorldViewProjection"];
         _tilesParam = Parameters["Tiles"];
     }
-    
+
     public Matrix Projection
     {
         get => _projection;
@@ -31,7 +31,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
             _dirtyFlags |= DirtyFlags.WorldViewProjection;
         }
     }
-    
+
     public Matrix View
     {
         get => _view;
@@ -41,7 +41,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
             _dirtyFlags |= DirtyFlags.WorldViewProjection;
         }
     }
-    
+
     public Matrix World
     {
         get => _world;
@@ -78,7 +78,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
 
         base.OnApply();
     }
-    
+
     public override Effect Clone()
     {
         return new BlockFaceEffect(this);

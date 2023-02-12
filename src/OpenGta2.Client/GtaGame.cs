@@ -16,25 +16,6 @@ public class GtaGame : Game
         IsMouseVisible = true;
     }
     
-    public Matrix Projection => GetProjection();
-
-    public Matrix ProjectionLhs => Matrix.CreatePerspectiveFieldOfView(
-        MathHelper.PiOver4, // 90 fov
-        (Window.ClientBounds.Width / (float)Window.ClientBounds.Height),
-        0.1f,
-        9000);
-    
-    private Matrix GetProjection()
-    {
-        var p = ProjectionLhs;
-
-        // Invert matrix because DirectX is LHS and MonoGame is RHS
-        p.M11 = -p.M11;
-        p.M13 = -p.M13;
-
-        return p;
-    }
-    
     protected override void Initialize()
     {
         _graphics.GraphicsProfile = GraphicsProfile.HiDef;
@@ -96,7 +77,7 @@ public class GtaGame : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        GraphicsDevice.Clear(Color.Black);
         
         base.Draw(gameTime);
     }
