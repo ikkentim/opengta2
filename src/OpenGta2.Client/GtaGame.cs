@@ -31,7 +31,11 @@ public class GtaGame : Game
     private void FirstUpdate()
     {
         // If we'd activate in LoadContent, the component won't initialize.
-        ActivateScene(new TestWorldScene(this));
+
+        ActivateScene(new LoadingWorldScene(this, "data/wil.gmp", "data/wil.sty", new TestWorldScene(this))); // LEVEL 1
+        // ActivateScene(new LoadingWorldScene(this, "data/lorne2e.gmp", "data/wil.sty", new TestWorldScene(this))); // BONUS 1a
+        // ActivateScene(new LoadingWorldScene(this, "data/ste.gmp", "data/ste.sty", new TestWorldScene(this))); // LEVEL 2
+        // ActivateScene(new LoadingWorldScene(this, "data/bil.gmp", "data/bil.sty", new TestWorldScene(this))); // LEVEL 3
     }
 
     protected override void LoadContent()

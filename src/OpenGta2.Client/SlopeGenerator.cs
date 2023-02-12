@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using OpenGta2.Client.Effects;
 using OpenGta2.Data.Map;
@@ -118,16 +117,16 @@ public static class SlopeGenerator
         right = GetFace(ref block, Face.Right, rotation);
     }
 
-    private static void SlopeNone(ref BlockInfo block, Rotation rotation, ICollection<VertexPositionTile> vertices,
-        ICollection<short> indices)
+    private static void SlopeNone(ref BlockInfo block, Rotation rotation, Matrix translationMatrix, BufferArray<VertexPositionTile> vertices,
+        BufferArray<short> indices)
     {
-        var translation = GetTranslation(rotation);
+        var translation = GetTranslation(rotation) * translationMatrix;
 
         RemapFaces(ref block, rotation, out var top, out var bottom, out var left, out var right);
 
         if (block.Lid.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 0), block.Lid.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 1), block.Lid.Flat));
@@ -143,7 +142,7 @@ public static class SlopeGenerator
 
         if (left.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 0), left.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 0), left.Flat));
@@ -160,7 +159,7 @@ public static class SlopeGenerator
 
         if (right.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 0), right.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 0), right.Flat));
@@ -177,7 +176,7 @@ public static class SlopeGenerator
 
         if (top.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
             
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 0), top.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 0), top.Flat));
@@ -194,7 +193,7 @@ public static class SlopeGenerator
 
         if (bottom.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 0), bottom.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 0), bottom.Flat));
@@ -210,9 +209,9 @@ public static class SlopeGenerator
         }
     }
 
-    private static void SlopeDiagonal(ref BlockInfo block, Rotation rotation, ICollection<VertexPositionTile> vertices, ICollection<short> indices)
+    private static void SlopeDiagonal(ref BlockInfo block, Rotation rotation, Matrix translationMatrix, BufferArray<VertexPositionTile> vertices, BufferArray<short> indices)
     {
-        var translation = GetTranslation(rotation);
+        var translation = GetTranslation(rotation) * translationMatrix;
 
         // based on facing top-right
         
@@ -220,7 +219,7 @@ public static class SlopeGenerator
 
         if (block.Lid.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
@@ -232,7 +231,7 @@ public static class SlopeGenerator
 
         if (left.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 0), left.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 0), left.Flat));
@@ -250,7 +249,7 @@ public static class SlopeGenerator
         
         if (right.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 0), right.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 0), right.Flat));
@@ -267,7 +266,7 @@ public static class SlopeGenerator
 
         if (top.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 0), top.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 0), top.Flat));
@@ -284,7 +283,7 @@ public static class SlopeGenerator
 
         if (bottom.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 0), bottom.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 0), bottom.Flat));
@@ -300,10 +299,10 @@ public static class SlopeGenerator
         }
     }
 
-    private static void SlopeN(ref BlockInfo block, Rotation rotation, ICollection<VertexPositionTile> vertices,
-        ICollection<short> indices, float slopeFrom, float slopeTo)
+    private static void SlopeN(ref BlockInfo block, Rotation rotation, Matrix translationMatrix, BufferArray<VertexPositionTile> vertices,
+        BufferArray<short> indices, float slopeFrom, float slopeTo)
     {
-        var translation = GetTranslation(rotation);
+        var translation = GetTranslation(rotation) * translationMatrix;
 
         // based on slope up
         
@@ -311,7 +310,7 @@ public static class SlopeGenerator
 
         if (block.Lid.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 0), block.Lid.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 1), block.Lid.Flat));
@@ -328,7 +327,7 @@ public static class SlopeGenerator
 
         if (left.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1-slopeTo), left.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1-slopeFrom), left.Flat));
@@ -349,7 +348,7 @@ public static class SlopeGenerator
 
         if (right.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             if (slopeFrom != 0)
             {
@@ -381,7 +380,7 @@ public static class SlopeGenerator
 
         if (top.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1-slopeTo), top.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1-slopeTo), top.Flat));
@@ -398,7 +397,7 @@ public static class SlopeGenerator
 
         if (bottom.TileGraphic != 0)
         {
-            var start = vertices.Count;
+            var start = vertices.Length;
 
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1-slopeFrom), bottom.Flat));
             vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1-slopeFrom), bottom.Flat));
@@ -414,57 +413,59 @@ public static class SlopeGenerator
         }
     }
 
-    public static void Push(ref BlockInfo block, ICollection<VertexPositionTile> vertices, ICollection<short> indices)
+    public static void Push(ref BlockInfo block, Vector3 offset, BufferArray<VertexPositionTile> vertices, BufferArray<short> indices)
     {
+        var m = Matrix.CreateTranslation(offset);
+        
         switch (block.SlopeType.SlopeType)
         {
             case SlopeType.Up45:
-                SlopeN(ref block, Rotation.Rotate0, vertices, indices, 0, 1);
+                SlopeN(ref block, Rotation.Rotate0, m, vertices, indices, 0, 1);
                 break;
             case SlopeType.Right45:
-                SlopeN(ref block, Rotation.Rotate90, vertices, indices, 0, 1);
+                SlopeN(ref block, Rotation.Rotate90, m, vertices, indices, 0, 1);
                 break;
             case SlopeType.Down45:
-                SlopeN(ref block, Rotation.Rotate180, vertices, indices, 0, 1);
+                SlopeN(ref block, Rotation.Rotate180, m, vertices, indices, 0, 1);
                 break;
             case SlopeType.Left45:
-                SlopeN(ref block, Rotation.Rotate270, vertices, indices, 0, 1);
+                SlopeN(ref block, Rotation.Rotate270, m, vertices, indices, 0, 1);
                 break;
             case SlopeType.DiagonalFacingUpRight:
-                SlopeDiagonal(ref block, Rotation.Rotate0, vertices, indices);
+                SlopeDiagonal(ref block, Rotation.Rotate0, m, vertices, indices);
                 break;
             case SlopeType.DiagonalFacingDownRight:
-                SlopeDiagonal(ref block, Rotation.Rotate90, vertices, indices);
+                SlopeDiagonal(ref block, Rotation.Rotate90, m, vertices, indices);
                 break;
             case SlopeType.DiagonalFacingDownLeft:
-                SlopeDiagonal(ref block, Rotation.Rotate180, vertices, indices);
+                SlopeDiagonal(ref block, Rotation.Rotate180, m, vertices, indices);
                 break;
             case SlopeType.DiagonalFacingUpLeft:
-                SlopeDiagonal(ref block, Rotation.Rotate270, vertices, indices);
+                SlopeDiagonal(ref block, Rotation.Rotate270, m, vertices, indices);
                 break;
             case SlopeType.Up26_1:
-                SlopeN(ref block, Rotation.Rotate0, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
+                SlopeN(ref block, Rotation.Rotate0, m, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
                 break;
             case SlopeType.Up26_2:
-                SlopeN(ref block, Rotation.Rotate0, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
+                SlopeN(ref block, Rotation.Rotate0, m, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
                 break;
             case SlopeType.Down26_1:
-                SlopeN(ref block, Rotation.Rotate180, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
+                SlopeN(ref block, Rotation.Rotate180, m, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
                 break;
             case SlopeType.Down26_2:
-                SlopeN(ref block, Rotation.Rotate180, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
+                SlopeN(ref block, Rotation.Rotate180, m, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
                 break;
             case SlopeType.Left26_1:
-                SlopeN(ref block, Rotation.Rotate270, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
+                SlopeN(ref block, Rotation.Rotate270, m, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
                 break;
             case SlopeType.Left26_2:
-                SlopeN(ref block, Rotation.Rotate270, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
+                SlopeN(ref block, Rotation.Rotate270, m, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
                 break;
             case SlopeType.Right26_1:
-                SlopeN(ref block, Rotation.Rotate90, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
+                SlopeN(ref block, Rotation.Rotate90, m, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
                 break;
             case SlopeType.Right26_2:
-                SlopeN(ref block, Rotation.Rotate90, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
+                SlopeN(ref block, Rotation.Rotate90, m, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
                 break;
             case SlopeType.Up7_1:
             case SlopeType.Up7_2:
@@ -476,7 +477,7 @@ public static class SlopeGenerator
             case SlopeType.Up7_8:
             {
                 var num = ((byte)block.SlopeType.SlopeType - (byte)SlopeType.Up7_1) + 1;
-                SlopeN(ref block, Rotation.Rotate0, vertices, indices, 0.125f * (num - 1), 0.125f * num);
+                SlopeN(ref block, Rotation.Rotate0, m, vertices, indices, 0.125f * (num - 1), 0.125f * num);
                 break;
             }
             case SlopeType.Down7_1:
@@ -489,7 +490,7 @@ public static class SlopeGenerator
             case SlopeType.Down7_8:
             {
                 var num = ((byte)block.SlopeType.SlopeType - (byte)SlopeType.Down7_1) + 1;
-                SlopeN(ref block, Rotation.Rotate180, vertices, indices, 0.125f * (num - 1), 0.125f * num);
+                SlopeN(ref block, Rotation.Rotate180, m, vertices, indices, 0.125f * (num - 1), 0.125f * num);
                 break;
             }
             case SlopeType.Left7_1:
@@ -502,7 +503,7 @@ public static class SlopeGenerator
             case SlopeType.Left7_8:
             {
                 var num = ((byte)block.SlopeType.SlopeType - (byte)SlopeType.Left7_1) + 1;
-                SlopeN(ref block, Rotation.Rotate270, vertices, indices, 0.125f * (num - 1), 0.125f * num);
+                SlopeN(ref block, Rotation.Rotate270, m, vertices, indices, 0.125f * (num - 1), 0.125f * num);
                 break;
             }
             case SlopeType.Right7_1:
@@ -515,7 +516,7 @@ public static class SlopeGenerator
             case SlopeType.Right7_8:
             {
                 var num = ((byte)block.SlopeType.SlopeType - (byte)SlopeType.Right7_1) + 1;
-                SlopeN(ref block, Rotation.Rotate90, vertices, indices, 0.125f * (num - 1), 0.125f * num);
+                SlopeN(ref block, Rotation.Rotate90, m, vertices, indices, 0.125f * (num - 1), 0.125f * num);
                 break;
             }
             case SlopeType.DiagonalSlopeFacingUpLeft:
@@ -533,14 +534,14 @@ public static class SlopeGenerator
             case SlopeType.PartialBlockCentre:
                 // TODO partial blocks
                 // TODO: diagonal slopes
-                SlopeNone(ref block, Rotation.Rotate0, vertices, indices);
+                SlopeNone(ref block, Rotation.Rotate0, m, vertices, indices);
                 break;
             case SlopeType.Reserved:
                 break;
             default:
             case SlopeType.SlopeAbove:
             case SlopeType.None:
-                SlopeNone(ref block, Rotation.Rotate0, vertices, indices);
+                SlopeNone(ref block, Rotation.Rotate0, m, vertices, indices);
                 break;
         }
     }
