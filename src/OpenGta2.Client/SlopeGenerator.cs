@@ -164,29 +164,50 @@ public static class SlopeGenerator
 
     private record struct Buffers(BufferArray<VertexPositionTile> Vertices, BufferArray<short> Indices);
 
-    private static VertexPositionTile GetFaceVertex(Vector2 point, Vector2 uv, ref FaceInfo face, Face direction, Matrix translation, Rotation uvRotation = Rotation.Rotate0)
+    private static VertexPositionTile GetFaceVertex(Vector3 point, Vector2 uv, ref FaceInfo face, Face direction, Matrix translation, Rotation uvRotation = Rotation.Rotate0, bool flat = false)
     {
         var matrix = GetPointOnFaceMatrix(direction);
 
         matrix *= translation;
 
-        return new VertexPositionTile(Vector3.Transform(new Vector3(point, 0), matrix), MapUv(ref face, uvRotation, uv.X, uv.Y), face.Flat);
+        return new VertexPositionTile(Vector3.Transform(point, matrix), MapUv(ref face, uvRotation, uv.X, uv.Y), face.Flat || flat);
     }
 
     private static VertexPositionTile GetVertex(Vector3 point, Vector2 uv, ref FaceInfo face, Matrix translation, Rotation uvRotation = Rotation.Rotate0) =>
         new(Vector3.Transform(point, translation), MapUv(ref face, uvRotation, uv.X, uv.Y), face.Flat);
 
-    private static void AddSimpleFace(ref FaceInfo face, Face normal, Buffers buffers, Matrix translation)
+    private static void AddSimpleFace(ref FaceInfo face, Face normal, Buffers buffers, Matrix translation, bool oppositeFlat = false)
     {
         if (face.TileGraphic == 0)
             return;
 
         var start = buffers.Vertices.Length;
+
+        // oppositeFlat = false;//test
+        var z = oppositeFlat ? -0.999f : 0;
+
+        if (face.Flat && oppositeFlat)
+        {
+            // render on both sides
+            buffers.Vertices.Add(GetFaceVertex(new Vector3(0, 0, 0), new Vector2(0, 0), ref face, normal, translation));
+            buffers.Vertices.Add(GetFaceVertex(new Vector3(1, 0, 0), new Vector2(1, 0), ref face, normal, translation));
+            buffers.Vertices.Add(GetFaceVertex(new Vector3(0, 1, 0), new Vector2(0, 1), ref face, normal, translation));
+            buffers.Vertices.Add(GetFaceVertex(new Vector3(1, 1, 0), new Vector2(1, 1), ref face, normal, translation));
             
-        buffers.Vertices.Add(GetFaceVertex(new Vector2(0, 0), new Vector2(0, 0), ref face, normal, translation));
-        buffers.Vertices.Add(GetFaceVertex(new Vector2(1, 0), new Vector2(1, 0), ref face, normal, translation));
-        buffers.Vertices.Add(GetFaceVertex(new Vector2(0, 1), new Vector2(0, 1), ref face, normal, translation));
-        buffers.Vertices.Add(GetFaceVertex(new Vector2(1, 1), new Vector2(1, 1), ref face, normal, translation));
+            buffers.Indices.Add((short)(start + 0));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 2));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 3));
+            buffers.Indices.Add((short)(start + 2));
+
+            start = buffers.Vertices.Length;
+        }
+
+        buffers.Vertices.Add(GetFaceVertex(new Vector3(0, 0, z), new Vector2(0, 0), ref face, normal, translation, flat: oppositeFlat));
+        buffers.Vertices.Add(GetFaceVertex(new Vector3(1, 0, z), new Vector2(1, 0), ref face, normal, translation, flat: oppositeFlat));
+        buffers.Vertices.Add(GetFaceVertex(new Vector3(0, 1, z), new Vector2(0, 1), ref face, normal, translation, flat: oppositeFlat));
+        buffers.Vertices.Add(GetFaceVertex(new Vector3(1, 1, z), new Vector2(1, 1), ref face, normal, translation, flat: oppositeFlat));
 
         buffers.Indices.Add((short)(start + 0));
         buffers.Indices.Add((short)(start + 1));
@@ -199,10 +220,10 @@ public static class SlopeGenerator
     private static void SlopeNone(ref BlockInfo block, Matrix translationMatrix, Buffers buffers)
     {
         AddSimpleFace(ref block.Lid, Face.Lid, buffers, translationMatrix);
-        AddSimpleFace(ref block.Left, Face.Left, buffers, translationMatrix);
-        AddSimpleFace(ref block.Right, Face.Right, buffers, translationMatrix);
-        AddSimpleFace(ref block.Top, Face.Top, buffers, translationMatrix);
-        AddSimpleFace(ref block.Bottom, Face.Bottom, buffers, translationMatrix);
+        AddSimpleFace(ref block.Left, Face.Left, buffers, translationMatrix, block.Right.Flat);
+        AddSimpleFace(ref block.Right, Face.Right, buffers, translationMatrix, block.Left.Flat);
+        AddSimpleFace(ref block.Top, Face.Top, buffers, translationMatrix, block.Bottom.Flat);
+        AddSimpleFace(ref block.Bottom, Face.Bottom, buffers, translationMatrix, block.Top.Flat);
     }
 
     private static void SlopeDiagonal(ref BlockInfo block, Rotation blockRotation, Matrix translationMatrix, Buffers buffers)
