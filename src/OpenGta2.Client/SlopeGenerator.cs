@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Transactions;
 using Microsoft.Xna.Framework;
 using OpenGta2.Client.Effects;
 using OpenGta2.Data.Map;
@@ -7,12 +8,32 @@ namespace OpenGta2.Client;
 
 public static class SlopeGenerator
 {
+    // rotation of cube
     private static readonly Matrix MatrixUp = Matrix.Identity;
     private static readonly Matrix MatrixRight = Matrix.CreateRotationZ(MathF.PI / 2) * Matrix.CreateTranslation(1, 0, 0);
     private static readonly Matrix MatrixDown = Matrix.CreateRotationZ(MathF.PI) * Matrix.CreateTranslation(1, 1, 0);
     private static readonly Matrix MatrixLeft = Matrix.CreateRotationZ(-MathF.PI / 2) * Matrix.CreateTranslation(0, 1, 0);
     
-    private static Matrix GetTranslation(Rotation rotation)
+    // point on face to face
+    private static readonly Matrix PofLeft = Matrix.CreateRotationX(-MathHelper.PiOver2) *
+                                             Matrix.CreateRotationZ(MathHelper.PiOver2) *
+                                             Matrix.CreateTranslation(new Vector3(0, 0, 1));
+    
+    private static readonly Matrix PofRight = Matrix.CreateRotationX(-MathHelper.PiOver2) *
+                                              Matrix.CreateRotationZ(-MathHelper.PiOver2) *
+                                              Matrix.CreateTranslation(new Vector3(1, 1, 1));
+
+    private static readonly Matrix PofTop = Matrix.CreateRotationX(-MathHelper.PiOver2) *
+                                            Matrix.CreateRotationZ(MathHelper.Pi) *
+                                            Matrix.CreateTranslation(new Vector3(1, 0, 1));
+
+    private static readonly Matrix PofBottom = Matrix.CreateRotationX(-MathHelper.PiOver2) *
+                                               Matrix.CreateTranslation(new Vector3(0, 1, 1));
+
+    private static readonly Matrix PofLid = Matrix.CreateTranslation(new Vector3(0, 0, 1));
+
+
+    private static Matrix GetRotationMatrix(Rotation rotation)
     {
         return rotation switch
         {
@@ -34,7 +55,8 @@ public static class SlopeGenerator
                     case Face.Left: return ref block.Left;
                     case Face.Right: return ref block.Right;
                     case Face.Top: return ref block.Top;
-                    default: return ref block.Bottom;
+                    case Face.Bottom: return ref block.Bottom;
+                    default: return ref block.Lid;
                 }
             case Rotation.Rotate90:
                 switch (face)
@@ -42,7 +64,8 @@ public static class SlopeGenerator
                     case Face.Left: return ref block.Top;
                     case Face.Right: return ref block.Bottom;
                     case Face.Top: return ref block.Right;
-                    default: return ref block.Left;
+                    case Face.Bottom: return ref block.Left;
+                    default: return ref block.Lid;
                 }
             case Rotation.Rotate180:
                 switch (face)
@@ -50,7 +73,8 @@ public static class SlopeGenerator
                     case Face.Left: return ref block.Right;
                     case Face.Right: return ref block.Left;
                     case Face.Top: return ref block.Bottom;
-                    default: return ref block.Top;
+                    case Face.Bottom: return ref block.Top;
+                    default: return ref block.Lid;
                 }
             case Rotation.Rotate270:
                 switch (face)
@@ -58,11 +82,34 @@ public static class SlopeGenerator
                     case Face.Left: return ref block.Bottom;
                     case Face.Right: return ref block.Top;
                     case Face.Top: return ref block.Left;
-                    default: return ref block.Right;
+                    case Face.Bottom: return ref block.Right;
+                    default: return ref block.Lid;
                 }
             default: throw new InvalidOperationException();
         }
     }
+
+    private static void RemapFaces(ref BlockInfo block, Rotation rotation, out FaceInfo top, out FaceInfo bottom, out FaceInfo left, out FaceInfo right)
+    {
+        top = GetFace(ref block, Face.Top, rotation);
+        bottom = GetFace(ref block, Face.Bottom, rotation);
+        left = GetFace(ref block, Face.Left, rotation);
+        right = GetFace(ref block, Face.Right, rotation);
+    }
+
+    private static Rotation Subtract(Rotation lhs, Rotation rhs)
+    {
+        var tmpRot = (int)lhs;
+        tmpRot -= (int)rhs;
+        if (tmpRot < 0)
+        {
+            tmpRot += 4;
+        }
+
+        return (Rotation)tmpRot;
+    }
+
+    private static Vector3 MapUv(ref FaceInfo face, Rotation rotationBlock, float x, float y) => MapUv(face.TileGraphic, face.Rotation, rotationBlock, face.Flip, x, y);
 
     private static Vector3 MapUv(ushort tileGraphic, Rotation rotation, Rotation rotationBlock, bool flip, float x, float y)
     {
@@ -78,15 +125,8 @@ public static class SlopeGenerator
             }
         }
 
-        var tmpRot = (int)rotation;
-        tmpRot -= (int)rotationBlock;
-        if (tmpRot < 0)
-        {
-            tmpRot += 4;
-        }
-
-        rotation = (Rotation)tmpRot;
-
+        rotation = Subtract(rotation, rotationBlock);
+        
         float tmp;
         switch (rotation)
         {
@@ -109,363 +149,277 @@ public static class SlopeGenerator
         return new Vector3(x, y, tileGraphic);
     }
     
-    private static void RemapFaces(ref BlockInfo block, Rotation rotation, out FaceInfo top, out FaceInfo bottom, out FaceInfo left, out FaceInfo right)
+    private static Matrix GetPointOnFaceMatrix(Face face)
     {
-        top = GetFace(ref block, Face.Top, rotation);
-        bottom = GetFace(ref block, Face.Bottom, rotation);
-        left = GetFace(ref block, Face.Left, rotation);
-        right = GetFace(ref block, Face.Right, rotation);
+        return face switch
+        {
+            Face.Left => PofLeft,
+            Face.Right => PofRight,
+            Face.Top => PofTop,
+            Face.Bottom => PofBottom,
+            Face.Lid => PofLid,
+            _ => throw new ArgumentOutOfRangeException(nameof(face), face, null)
+        };
     }
 
-    private static void SlopeNone(ref BlockInfo block, Rotation rotation, Matrix translationMatrix, BufferArray<VertexPositionTile> vertices,
-        BufferArray<short> indices)
+    private record struct Buffers(BufferArray<VertexPositionTile> Vertices, BufferArray<short> Indices);
+
+    private static VertexPositionTile GetFaceVertex(Vector2 point, Vector2 uv, ref FaceInfo face, Face direction, Matrix translation, Rotation uvRotation = Rotation.Rotate0)
     {
-        var translation = GetTranslation(rotation) * translationMatrix;
+        var matrix = GetPointOnFaceMatrix(direction);
 
-        RemapFaces(ref block, rotation, out var top, out var bottom, out var left, out var right);
+        matrix *= translation;
 
-        if (block.Lid.TileGraphic != 0)
-        {
-            var start = vertices.Length;
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 0), block.Lid.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 1), block.Lid.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 1), block.Lid.Flat));
+        return new VertexPositionTile(Vector3.Transform(new Vector3(point, 0), matrix), MapUv(ref face, uvRotation, uv.X, uv.Y), face.Flat);
+    }
 
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
-        }
+    private static VertexPositionTile GetVertex(Vector3 point, Vector2 uv, ref FaceInfo face, Matrix translation, Rotation uvRotation = Rotation.Rotate0) =>
+        new(Vector3.Transform(point, translation), MapUv(ref face, uvRotation, uv.X, uv.Y), face.Flat);
 
-        if (left.TileGraphic != 0)
-        {
-            var start = vertices.Length;
+    private static void AddSimpleFace(ref FaceInfo face, Face normal, Buffers buffers, Matrix translation)
+    {
+        if (face.TileGraphic == 0)
+            return;
 
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 0), left.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 0), left.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1), left.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1), left.Flat));
-
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
-        }
-
-        if (right.TileGraphic != 0)
-        {
-            var start = vertices.Length;
-
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 0), right.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 0), right.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1), right.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1), right.Flat));
-
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
-        }
-
-        if (top.TileGraphic != 0)
-        {
-            var start = vertices.Length;
+        var start = buffers.Vertices.Length;
             
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 0), top.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 0), top.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1), top.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1), top.Flat));
+        buffers.Vertices.Add(GetFaceVertex(new Vector2(0, 0), new Vector2(0, 0), ref face, normal, translation));
+        buffers.Vertices.Add(GetFaceVertex(new Vector2(1, 0), new Vector2(1, 0), ref face, normal, translation));
+        buffers.Vertices.Add(GetFaceVertex(new Vector2(0, 1), new Vector2(0, 1), ref face, normal, translation));
+        buffers.Vertices.Add(GetFaceVertex(new Vector2(1, 1), new Vector2(1, 1), ref face, normal, translation));
 
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
-        }
-
-        if (bottom.TileGraphic != 0)
-        {
-            var start = vertices.Length;
-
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 0), bottom.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 0), bottom.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1), bottom.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1), bottom.Flat));
-
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
-        }
+        buffers.Indices.Add((short)(start + 0));
+        buffers.Indices.Add((short)(start + 1));
+        buffers.Indices.Add((short)(start + 2));
+        buffers.Indices.Add((short)(start + 1));
+        buffers.Indices.Add((short)(start + 3));
+        buffers.Indices.Add((short)(start + 2));
+    }
+    
+    private static void SlopeNone(ref BlockInfo block, Matrix translationMatrix, Buffers buffers)
+    {
+        AddSimpleFace(ref block.Lid, Face.Lid, buffers, translationMatrix);
+        AddSimpleFace(ref block.Left, Face.Left, buffers, translationMatrix);
+        AddSimpleFace(ref block.Right, Face.Right, buffers, translationMatrix);
+        AddSimpleFace(ref block.Top, Face.Top, buffers, translationMatrix);
+        AddSimpleFace(ref block.Bottom, Face.Bottom, buffers, translationMatrix);
     }
 
-    private static void SlopeDiagonal(ref BlockInfo block, Rotation rotation, Matrix translationMatrix, BufferArray<VertexPositionTile> vertices, BufferArray<short> indices)
+    private static void SlopeDiagonal(ref BlockInfo block, Rotation blockRotation, Matrix translationMatrix, Buffers buffers)
     {
-        var translation = GetTranslation(rotation) * translationMatrix;
-
-        // based on facing top-right
+        // based on facing up-right
+        var translation = GetRotationMatrix(blockRotation) * translationMatrix;
+        RemapFaces(ref block, blockRotation, out var top, out var bottom, out var left, out var right);
         
-        RemapFaces(ref block, rotation, out var top, out var bottom, out var left, out var right);
-
+        AddSimpleFace(ref left, Face.Left, buffers, translation);
+        AddSimpleFace(ref bottom, Face.Bottom, buffers, translation);
+        
         if (block.Lid.TileGraphic != 0)
         {
-            var start = vertices.Length;
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
+            var start = buffers.Vertices.Length;
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 1), new Vector2(0, 0), ref block.Lid, translation, blockRotation));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 1), new Vector2(1, 1), ref block.Lid, translation, blockRotation));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 1, 1), new Vector2(0, 1), ref block.Lid, translation, blockRotation));
 
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
+            buffers.Indices.Add((short)(start + 0));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 2));
         }
-
-        if (left.TileGraphic != 0)
-        {
-            var start = vertices.Length;
-
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 0), left.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 0), left.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1), left.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1), left.Flat));
-
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
-        }
-
         
-        if (right.TileGraphic != 0)
+        // diagonal is the right face. due to block rotation this might be the top face.
+        ref var diag = ref right;
+        if (blockRotation is Rotation.Rotate90 or Rotation.Rotate270)
         {
-            var start = vertices.Length;
-
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 0), right.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 0), right.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1), right.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1), right.Flat));
-
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
+            diag = ref top;
         }
-
-        if (top.TileGraphic != 0)
+        
+        if (diag.TileGraphic != 0)
         {
-            var start = vertices.Length;
-
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 0), top.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 1), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 0), top.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1), top.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1), top.Flat));
-
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
+            var start = buffers.Vertices.Length;
+            
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 1), new Vector2(0, 0), ref diag, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 1), new Vector2(1, 0), ref diag, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 0), new Vector2(0, 1), ref diag, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 0), new Vector2(1, 1), ref diag, translation));
+            
+            buffers.Indices.Add((short)(start + 0));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 2));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 3));
+            buffers.Indices.Add((short)(start + 2));
         }
-
-        if (bottom.TileGraphic != 0)
-        {
-            var start = vertices.Length;
-
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 0), bottom.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 1), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 0), bottom.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1), bottom.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1), bottom.Flat));
-
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
-        }
+        
     }
 
-    private static void SlopeN(ref BlockInfo block, Rotation rotation, Matrix translationMatrix, BufferArray<VertexPositionTile> vertices,
-        BufferArray<short> indices, float slopeFrom, float slopeTo)
+    private static void SlopeN(ref BlockInfo block, Rotation blockRotation, Matrix translationMatrix, Buffers buffers, float slopeFrom, float slopeTo)
     {
-        var translation = GetTranslation(rotation) * translationMatrix;
+        var translation = GetRotationMatrix(blockRotation) * translationMatrix;
 
         // based on slope up
-        
-        RemapFaces(ref block, rotation, out var top, out var bottom, out var left, out var right);
+
+        RemapFaces(ref block, blockRotation, out var top, out var bottom, out var left, out var right);
 
         if (block.Lid.TileGraphic != 0)
         {
-            var start = vertices.Length;
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 0), block.Lid.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 0), block.Lid.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 0, 1), block.Lid.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(block.Lid.TileGraphic, block.Lid.Rotation, rotation, block.Lid.Flip, 1, 1), block.Lid.Flat));
+            var start = buffers.Vertices.Length;
 
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 0, slopeTo), new Vector2(0, 0), ref block.Lid, translation, blockRotation));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 0, slopeTo), new Vector2(1, 0), ref block.Lid, translation, blockRotation));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 1, slopeFrom), new Vector2(0, 1), ref block.Lid, translation, blockRotation));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 1, slopeFrom), new Vector2(1, 1), ref block.Lid, translation, blockRotation));
+
+            buffers.Indices.Add((short)(start + 0));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 2));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 3));
+            buffers.Indices.Add((short)(start + 2));
         }
 
 
         if (left.TileGraphic != 0)
         {
-            var start = vertices.Length;
+            var start = buffers.Vertices.Length;
 
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1-slopeTo), left.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1-slopeFrom), left.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 0, 1), left.Flat));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 0, slopeTo), new Vector2(0, 1 - slopeTo), ref left, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 1, slopeFrom), new Vector2(1, 1 - slopeFrom), ref left, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 0), new Vector2(0, 1), ref left, translation));
 
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
+            buffers.Indices.Add((short)(start + 0));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 2));
 
             if (slopeFrom != 0)
             {
-                vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(left.TileGraphic, left.Rotation, Rotation.Rotate0, left.Flip, 1, 1), left.Flat));
-                indices.Add((short)(start + 1));
-                indices.Add((short)(start + 3));
-                indices.Add((short)(start + 2));
+                buffers.Vertices.Add(GetVertex(new Vector3(0, 1, 0), new Vector2(1, 1), ref left, translation));
+                buffers.Indices.Add((short)(start + 1));
+                buffers.Indices.Add((short)(start + 3));
+                buffers.Indices.Add((short)(start + 2));
             }
         }
 
         if (right.TileGraphic != 0)
         {
-            var start = vertices.Length;
+            var start = buffers.Vertices.Length;
 
             if (slopeFrom != 0)
             {
-                vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1 - slopeFrom), right.Flat));
+                buffers.Vertices.Add(GetVertex(new Vector3(1, 1, slopeFrom), new Vector2(0, 1 - slopeFrom), ref right, translation));
             }
 
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1-slopeTo), right.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 0, 1), right.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(right.TileGraphic, right.Rotation, Rotation.Rotate0, right.Flip, 1, 1), right.Flat));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 0, slopeTo), new Vector2(1, 1 - slopeTo), ref right, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 0), new Vector2(0, 1), ref right, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 0, 0), new Vector2(1, 1), ref right, translation));
 
 
             if (slopeFrom != 0)
             {
-                indices.Add((short)(start + 0));
-                indices.Add((short)(start + 1));
-                indices.Add((short)(start + 2));
-                indices.Add((short)(start + 1));
-                indices.Add((short)(start + 3));
-                indices.Add((short)(start + 2));
+                buffers.Indices.Add((short)(start + 0));
+                buffers.Indices.Add((short)(start + 1));
+                buffers.Indices.Add((short)(start + 2));
+                buffers.Indices.Add((short)(start + 1));
+                buffers.Indices.Add((short)(start + 3));
+                buffers.Indices.Add((short)(start + 2));
             }
             else
             {
-                
-                indices.Add((short)(start + 0));
-                indices.Add((short)(start + 2));
-                indices.Add((short)(start + 1));
+
+                buffers.Indices.Add((short)(start + 0));
+                buffers.Indices.Add((short)(start + 2));
+                buffers.Indices.Add((short)(start + 1));
             }
         }
 
         if (top.TileGraphic != 0)
         {
-            var start = vertices.Length;
+            var start = buffers.Vertices.Length;
 
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, slopeTo), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1-slopeTo), top.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, slopeTo), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1-slopeTo), top.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 0, 1), top.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 0, 0), translation), MapUv(top.TileGraphic, top.Rotation, Rotation.Rotate0, top.Flip, 1, 1), top.Flat));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 0, slopeTo), new Vector2(0, 1 - slopeTo), ref top, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 0, slopeTo), new Vector2(1, 1 - slopeTo), ref top, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 0, 0), new Vector2(0, 1), ref top, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 0), new Vector2(1, 1), ref top, translation));
 
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
+            buffers.Indices.Add((short)(start + 0));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 2));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 3));
+            buffers.Indices.Add((short)(start + 2));
         }
 
         if (bottom.TileGraphic != 0)
         {
-            var start = vertices.Length;
+            var start = buffers.Vertices.Length;
 
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, slopeFrom), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1-slopeFrom), bottom.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, slopeFrom), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1-slopeFrom), bottom.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(0, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 0, 1), bottom.Flat));
-            vertices.Add(new VertexPositionTile(Vector3.Transform(new Vector3(1, 1, 0), translation), MapUv(bottom.TileGraphic, bottom.Rotation, Rotation.Rotate0, bottom.Flip, 1, 1), bottom.Flat));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 1, slopeFrom), new Vector2(0, 1 - slopeFrom), ref bottom, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 1, slopeFrom), new Vector2(1, 1 - slopeFrom), ref bottom, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(0, 1, 0), new Vector2(0, 1), ref bottom, translation));
+            buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 0), new Vector2(1, 1), ref bottom, translation));
 
-            indices.Add((short)(start + 0));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 2));
-            indices.Add((short)(start + 1));
-            indices.Add((short)(start + 3));
-            indices.Add((short)(start + 2));
+            buffers.Indices.Add((short)(start + 0));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 2));
+            buffers.Indices.Add((short)(start + 1));
+            buffers.Indices.Add((short)(start + 3));
+            buffers.Indices.Add((short)(start + 2));
         }
     }
 
     public static void Push(ref BlockInfo block, Vector3 offset, BufferArray<VertexPositionTile> vertices, BufferArray<short> indices)
     {
-        var m = Matrix.CreateTranslation(offset);
-        
+        var translation = Matrix.CreateTranslation(offset);
+        var buffers = new Buffers(vertices, indices);
+
         switch (block.SlopeType.SlopeType)
         {
             case SlopeType.Up45:
-                SlopeN(ref block, Rotation.Rotate0, m, vertices, indices, 0, 1);
+                SlopeN(ref block, Rotation.Rotate0, translation, buffers, 0, 1);
                 break;
             case SlopeType.Right45:
-                SlopeN(ref block, Rotation.Rotate90, m, vertices, indices, 0, 1);
+                SlopeN(ref block, Rotation.Rotate90, translation, buffers, 0, 1);
                 break;
             case SlopeType.Down45:
-                SlopeN(ref block, Rotation.Rotate180, m, vertices, indices, 0, 1);
+                SlopeN(ref block, Rotation.Rotate180, translation, buffers, 0, 1);
                 break;
             case SlopeType.Left45:
-                SlopeN(ref block, Rotation.Rotate270, m, vertices, indices, 0, 1);
+                SlopeN(ref block, Rotation.Rotate270, translation, buffers, 0, 1);
                 break;
             case SlopeType.DiagonalFacingUpRight:
-                SlopeDiagonal(ref block, Rotation.Rotate0, m, vertices, indices);
+                SlopeDiagonal(ref block, Rotation.Rotate0, translation, buffers);
                 break;
             case SlopeType.DiagonalFacingDownRight:
-                SlopeDiagonal(ref block, Rotation.Rotate90, m, vertices, indices);
+                SlopeDiagonal(ref block, Rotation.Rotate90, translation, buffers);
                 break;
             case SlopeType.DiagonalFacingDownLeft:
-                SlopeDiagonal(ref block, Rotation.Rotate180, m, vertices, indices);
+                SlopeDiagonal(ref block, Rotation.Rotate180, translation, buffers);
                 break;
             case SlopeType.DiagonalFacingUpLeft:
-                SlopeDiagonal(ref block, Rotation.Rotate270, m, vertices, indices);
+                SlopeDiagonal(ref block, Rotation.Rotate270, translation, buffers);
                 break;
             case SlopeType.Up26_1:
-                SlopeN(ref block, Rotation.Rotate0, m, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
+                SlopeN(ref block, Rotation.Rotate0, translation, buffers, 0F, 0.5f * 1);
                 break;
             case SlopeType.Up26_2:
-                SlopeN(ref block, Rotation.Rotate0, m, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
+                SlopeN(ref block, Rotation.Rotate0, translation, buffers, 0.5F, 0.5f * 2);
                 break;
             case SlopeType.Down26_1:
-                SlopeN(ref block, Rotation.Rotate180, m, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
+                SlopeN(ref block, Rotation.Rotate180, translation, buffers, 0F, 0.5f * 1);
                 break;
             case SlopeType.Down26_2:
-                SlopeN(ref block, Rotation.Rotate180, m, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
+                SlopeN(ref block, Rotation.Rotate180, translation, buffers, 0.5F, 0.5f * 2);
                 break;
             case SlopeType.Left26_1:
-                SlopeN(ref block, Rotation.Rotate270, m, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
+                SlopeN(ref block, Rotation.Rotate270, translation, buffers, 0F, 0.5f * 1);
                 break;
             case SlopeType.Left26_2:
-                SlopeN(ref block, Rotation.Rotate270, m, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
+                SlopeN(ref block, Rotation.Rotate270, translation, buffers, 0.5F, 0.5f * 2);
                 break;
             case SlopeType.Right26_1:
-                SlopeN(ref block, Rotation.Rotate90, m, vertices, indices, 0.5f * (1 - 1), 0.5f * 1);
+                SlopeN(ref block, Rotation.Rotate90, translation, buffers, 0F, 0.5f * 1);
                 break;
             case SlopeType.Right26_2:
-                SlopeN(ref block, Rotation.Rotate90, m, vertices, indices, 0.5f * (2 - 1), 0.5f * 2);
+                SlopeN(ref block, Rotation.Rotate90, translation, buffers, 0.5F, 0.5f * 2);
                 break;
             case SlopeType.Up7_1:
             case SlopeType.Up7_2:
@@ -477,7 +431,7 @@ public static class SlopeGenerator
             case SlopeType.Up7_8:
             {
                 var num = ((byte)block.SlopeType.SlopeType - (byte)SlopeType.Up7_1) + 1;
-                SlopeN(ref block, Rotation.Rotate0, m, vertices, indices, 0.125f * (num - 1), 0.125f * num);
+                SlopeN(ref block, Rotation.Rotate0, translation, buffers, 0.125f * (num - 1), 0.125f * num);
                 break;
             }
             case SlopeType.Down7_1:
@@ -490,7 +444,7 @@ public static class SlopeGenerator
             case SlopeType.Down7_8:
             {
                 var num = ((byte)block.SlopeType.SlopeType - (byte)SlopeType.Down7_1) + 1;
-                SlopeN(ref block, Rotation.Rotate180, m, vertices, indices, 0.125f * (num - 1), 0.125f * num);
+                SlopeN(ref block, Rotation.Rotate180, translation, buffers, 0.125f * (num - 1), 0.125f * num);
                 break;
             }
             case SlopeType.Left7_1:
@@ -503,7 +457,7 @@ public static class SlopeGenerator
             case SlopeType.Left7_8:
             {
                 var num = ((byte)block.SlopeType.SlopeType - (byte)SlopeType.Left7_1) + 1;
-                SlopeN(ref block, Rotation.Rotate270, m, vertices, indices, 0.125f * (num - 1), 0.125f * num);
+                SlopeN(ref block, Rotation.Rotate270, translation, buffers, 0.125f * (num - 1), 0.125f * num);
                 break;
             }
             case SlopeType.Right7_1:
@@ -516,13 +470,14 @@ public static class SlopeGenerator
             case SlopeType.Right7_8:
             {
                 var num = ((byte)block.SlopeType.SlopeType - (byte)SlopeType.Right7_1) + 1;
-                SlopeN(ref block, Rotation.Rotate90, m, vertices, indices, 0.125f * (num - 1), 0.125f * num);
+                SlopeN(ref block, Rotation.Rotate90, translation, buffers, 0.125f * (num - 1), 0.125f * num);
                 break;
             }
             case SlopeType.DiagonalSlopeFacingUpLeft:
             case SlopeType.DiagonalSlopeFacingUpRight:
             case SlopeType.DiagonalSlopeFacingDownLeft:
             case SlopeType.DiagonalSlopeFacingDownRight:
+
             case SlopeType.PartialBlockLeft:
             case SlopeType.PartialBlockRight:
             case SlopeType.PartialBlockTop:
@@ -534,14 +489,14 @@ public static class SlopeGenerator
             case SlopeType.PartialBlockCentre:
                 // TODO partial blocks
                 // TODO: diagonal slopes
-                SlopeNone(ref block, Rotation.Rotate0, m, vertices, indices);
+                SlopeNone(ref block, translation, buffers);
                 break;
             case SlopeType.Reserved:
                 break;
             default:
             case SlopeType.SlopeAbove:
             case SlopeType.None:
-                SlopeNone(ref block, Rotation.Rotate0, m, vertices, indices);
+                SlopeNone(ref block, translation, buffers);
                 break;
         }
     }
