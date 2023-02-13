@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Client.Effects;
@@ -14,9 +15,12 @@ public class LevelProvider
 {
     private readonly Vector3[] _cameraCornersBuffer = new Vector3[8];
 
-    private const int ChunkSize = 32;
-    private int MaxChunksX;
-    private int MaxChunksY;
+    private const int ChunkSize = 16;
+    private int _maxChunksX;
+    private int _maxChunksY;
+    private Rectangle _chunkBounds;
+    private readonly Dictionary<Point,RenderableMapChunk> _chunks = new();
+
 
     private readonly GraphicsDevice _graphicsDevice;
 
@@ -43,18 +47,19 @@ public class LevelProvider
         Map = mapreader.Read();
         Style = styleReader.Read();
 
-        MaxChunksX = (int)Math.Ceiling(Map.Width / (float)ChunkSize);
-        MaxChunksY = (int)Math.Ceiling(Map.Height / (float)ChunkSize);
+        _maxChunksX = (int)Math.Ceiling(Map.Width / (float)ChunkSize);
+        _maxChunksY = (int)Math.Ceiling(Map.Height / (float)ChunkSize);
     }
-
-    private Rectangle _chunkBounds;
-
-    private Dictionary<Point,RenderableMapChunk> _chunks = new();
 
     public IEnumerable<RenderableMapChunk> GetRenderableChunks() => _chunks.Values;
 
     public void Update(Camera camera)
     {
+        if (!IsMapLoaded)
+        {
+            return;
+        }
+
         // find visible chunks
         camera.Frustum.GetCorners(_cameraCornersBuffer);
         var fovBounds = BoundingBox.CreateFromPoints(_cameraCornersBuffer);
@@ -70,10 +75,10 @@ public class LevelProvider
         var chunkMinY = minY / ChunkSize;
         var chunkMaxY = (int)MathF.Ceiling(maxY / ChunkSize);
 
-        chunkMinX = Math.Clamp(chunkMinX, 0, MaxChunksX);
-        chunkMaxX = Math.Clamp(chunkMaxX, 0, MaxChunksX);
-        chunkMinY = Math.Clamp(chunkMinY, 0, MaxChunksY);
-        chunkMaxY = Math.Clamp(chunkMaxY, 0, MaxChunksY);
+        chunkMinX = Math.Clamp(chunkMinX, 0, _maxChunksX);
+        chunkMaxX = Math.Clamp(chunkMaxX, 0, _maxChunksX);
+        chunkMinY = Math.Clamp(chunkMinY, 0, _maxChunksY);
+        chunkMaxY = Math.Clamp(chunkMaxY, 0, _maxChunksY);
         
         var chunkBounds = new Rectangle(chunkMinX, chunkMinY, chunkMaxX - chunkMinX, chunkMaxY - chunkMinY);
 
@@ -104,6 +109,7 @@ public class LevelProvider
     }
     
     private readonly BufferArray<short> _indices = new();
+    private readonly BufferArray<(float drawOrder, short index)> _flatIndices = new();
     private readonly BufferArray<VertexPositionTile> _vertices = new();
 
     private void LoadChunk(int chunkX, int chunkY)
@@ -115,7 +121,7 @@ public class LevelProvider
         var minY = chunkY * ChunkSize;
         var maxY = minY + ChunkSize;
         
-        var map = Map.CompressedMap;
+        var map = Map!.CompressedMap;
         
         for (var x = minX; x < maxX; x++)
         for (var y = minY; y < maxY; y++)
@@ -129,20 +135,29 @@ public class LevelProvider
                 var blockNum = column.Blocks[z - column.Offset];
                 ref var block = ref map.Blocks[blockNum];
 
-                SlopeGenerator.Push(ref block, offset, _vertices, _indices);
+                SlopeGenerator.Push(ref block, offset, _vertices, _indices, _flatIndices);
             }
         }
-        
-        var vert = new VertexBuffer(_graphicsDevice, typeof(VertexPositionTile), _vertices.Length,
-            BufferUsage.WriteOnly);
-        var idx = new IndexBuffer(_graphicsDevice, typeof(short), _indices.Length, BufferUsage.WriteOnly);
+
+        var flats = _flatIndices.GetArray()
+            .Take(_flatIndices.Length)
+            .OrderBy(x => x.drawOrder)
+            .Select(x => x.index)
+            .ToArray();
+
+        var vert = new VertexBuffer(_graphicsDevice, typeof(VertexPositionTile), _vertices.Length, BufferUsage.WriteOnly);
+        var idx = new IndexBuffer(_graphicsDevice, typeof(short), _indices.Length + flats.Length, BufferUsage.WriteOnly);
         vert.SetData(_vertices.GetArray(), 0, _vertices.Length);
         idx.SetData(_indices.GetArray(), 0, _indices.Length);
+        
+        idx.SetData(_indices.Length * 2, flats, 0, flats.Length);
 
-        _chunks[point] = new RenderableMapChunk(point, vert, idx, _indices.Length / 3, Matrix.CreateTranslation(chunkX * ChunkSize, chunkY * ChunkSize, 0));
+        _chunks[point] = new RenderableMapChunk(point, vert, idx, _indices.Length / 3, _indices.Length, flats.Length / 3,
+            Matrix.CreateTranslation(chunkX * ChunkSize, chunkY * ChunkSize, 0));
         
         _vertices.Reset();
         _indices.Reset();
+        _flatIndices.Reset();
     }
 
     private void UnloadChunk(RenderableMapChunk chunk)

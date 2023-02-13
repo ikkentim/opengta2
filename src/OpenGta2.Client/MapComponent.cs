@@ -76,24 +76,46 @@ public class MapComponent : DrawableGameComponent
 
     public override void Draw(GameTime gameTime)
     {
+        // _game.GraphicsDevice.BlendState = BlendState.AlphaBlend;
+        GraphicsDevice.SamplerStates[0] = SamplerState.AnisotropicClamp;
+
+
         _blockFaceEffect!.View = _camera.ViewMatrix;
         _blockFaceEffect.Projection = _camera.Projection;
-        // _game.GraphicsDevice.BlendState = BlendState.AlphaBlend; // TODO: handle alpha in a shader
+        _blockFaceEffect.Flat = false;
 
         foreach (var chunk in _levelProvider.GetRenderableChunks())
         {
+            if (chunk.SolidPrimitiveCount == 0) continue;
+
             _game.GraphicsDevice.Indices = chunk.Indices;
             _game.GraphicsDevice.SetVertexBuffer(chunk.Vertices);
-
             _blockFaceEffect.World = chunk.Translation;
-
-            // TODO: Should render flat tiles in a separate render pass to allow for transparency (instead of clipping)
+            
             foreach (var pass in _blockFaceEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                _game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.PrimitiveCount);
+                _game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.SolidPrimitiveCount);
             }
         }
+        
+        _blockFaceEffect.Flat = true;
+        
+        foreach (var chunk in _levelProvider.GetRenderableChunks())
+        {
+            if (chunk.FlatPrimitiveCount == 0) continue;
+
+            _game.GraphicsDevice.Indices = chunk.Indices;
+            _game.GraphicsDevice.SetVertexBuffer(chunk.Vertices);
+            _blockFaceEffect.World = chunk.Translation;
+
+            foreach (var pass in _blockFaceEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                _game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, chunk.FlatIndexOffset, chunk.FlatPrimitiveCount);
+            }
+        }
+
 
         base.Draw(gameTime);
     }

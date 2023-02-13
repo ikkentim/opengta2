@@ -11,18 +11,26 @@ public class GtaGame : Game
 
     public GtaGame()
     {
-        _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-    }
-    
-    protected override void Initialize()
-    {
+
+        _graphics = new GraphicsDeviceManager(this);
+        _graphics.PreparingDeviceSettings += Graphics_PreparingDeviceSettings;
         _graphics.GraphicsProfile = GraphicsProfile.HiDef;
         _graphics.ApplyChanges();
-        
         _graphics.PreferredBackBufferWidth = 1920;
         _graphics.PreferredBackBufferHeight = 1080;
+        _graphics.ApplyChanges();
+    }
+
+    private void Graphics_PreparingDeviceSettings(object? sender, PreparingDeviceSettingsEventArgs e)
+    {
+        _graphics.PreferMultiSampling = true;
+    }
+
+    protected override void Initialize()
+    {
+        _graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 4;
         _graphics.ApplyChanges();
 
         base.Initialize();
