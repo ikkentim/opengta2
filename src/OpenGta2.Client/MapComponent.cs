@@ -76,7 +76,6 @@ public class MapComponent : DrawableGameComponent
 
     public override void Draw(GameTime gameTime)
     {
-        // _game.GraphicsDevice.BlendState = BlendState.AlphaBlend;
         GraphicsDevice.SamplerStates[0] = SamplerState.AnisotropicClamp;
 
 

@@ -9,7 +9,7 @@
 
 matrix WorldViewProjection;
 
-Texture2DArray<float4> Tiles : register(t0);
+Texture2DArray Tiles : register(t0);
 sampler TilesSampler : register(s0);
 
 bool Flat;
@@ -26,11 +26,9 @@ struct VertexShaderOutput
     float3 TexCoord : TEXCOORD0;
 };
 
-VertexShaderOutput MainVS(in VertexShaderInput input)
+VertexShaderOutput MainVS(const in VertexShaderInput input)
 {
     VertexShaderOutput output;
-
-
     output.Position = mul(input.Position, WorldViewProjection);
     output.TexCoord = input.TexCoord;
     return output;
@@ -39,20 +37,15 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float4 color = Tiles.Sample(TilesSampler, input.TexCoord);
-   // float dotColor = dot(color.rgb, float3(1, 1, 1));
-
     clip(color.a - 0.05);
-
     return color;
 }
 
-technique Good
+technique Faces
 {
     pass P0
     {
         AlphaBlendEnable = TRUE;
-        // DestBlend = INVSRCALPHA;
-        // SrcBlend = SRCALPHA;
         VertexShader = compile VS_SHADERMODEL MainVS();
         PixelShader = compile PS_SHADERMODEL MainPS();
     }
