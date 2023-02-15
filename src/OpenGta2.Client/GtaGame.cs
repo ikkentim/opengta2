@@ -30,7 +30,7 @@ public class GtaGame : Game
 
     protected override void Initialize()
     {
-        _graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 4;
+        _graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 1;
         _graphics.ApplyChanges();
 
         base.Initialize();

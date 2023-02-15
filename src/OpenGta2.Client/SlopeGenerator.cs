@@ -4,90 +4,45 @@ using System.Transactions;
 using Microsoft.Xna.Framework;
 using OpenGta2.Client.Effects;
 using OpenGta2.Data.Map;
-
 namespace OpenGta2.Client;
 
 public static class SlopeGenerator
 {
     // rotation of cube
-    private static readonly Matrix MatrixUp = Matrix.Identity;
-    private static readonly Matrix MatrixRight = Matrix.CreateRotationZ(MathF.PI / 2) * Matrix.CreateTranslation(1, 0, 0);
-    private static readonly Matrix MatrixDown = Matrix.CreateRotationZ(MathF.PI) * Matrix.CreateTranslation(1, 1, 0);
-    private static readonly Matrix MatrixLeft = Matrix.CreateRotationZ(-MathF.PI / 2) * Matrix.CreateTranslation(0, 1, 0);
+    private static readonly Matrix MatrixRotateUp = Matrix.Identity;
+    private static readonly Matrix MatrixRotateRight = Matrix.CreateRotationZ(MathF.PI / 2) * Matrix.CreateTranslation(1, 0, 0);
+    private static readonly Matrix MatrixRotateDown = Matrix.CreateRotationZ(MathF.PI) * Matrix.CreateTranslation(1, 1, 0);
+    private static readonly Matrix MatrixRotateLeft = Matrix.CreateRotationZ(-MathF.PI / 2) * Matrix.CreateTranslation(0, 1, 0);
     
-    // point on face to face
-    private static readonly Matrix PofLeft = Matrix.CreateRotationX(-MathHelper.PiOver2) *
+    // face to cube
+    private static readonly Matrix MatrixFaceToCubeLeft = Matrix.CreateRotationX(-MathHelper.PiOver2) *
                                              Matrix.CreateRotationZ(MathHelper.PiOver2) *
                                              Matrix.CreateTranslation(new Vector3(0, 0, 1));
     
-    private static readonly Matrix PofRight = Matrix.CreateRotationX(-MathHelper.PiOver2) *
+    private static readonly Matrix MatrixFaceToCubeRight = Matrix.CreateRotationX(-MathHelper.PiOver2) *
                                               Matrix.CreateRotationZ(-MathHelper.PiOver2) *
                                               Matrix.CreateTranslation(new Vector3(1, 1, 1));
 
-    private static readonly Matrix PofTop = Matrix.CreateRotationX(-MathHelper.PiOver2) *
+    private static readonly Matrix MatrixFaceToCubeTop = Matrix.CreateRotationX(-MathHelper.PiOver2) *
                                             Matrix.CreateRotationZ(MathHelper.Pi) *
                                             Matrix.CreateTranslation(new Vector3(1, 0, 1));
 
-    private static readonly Matrix PofBottom = Matrix.CreateRotationX(-MathHelper.PiOver2) *
+    private static readonly Matrix MatrixFaceToCubeBottom = Matrix.CreateRotationX(-MathHelper.PiOver2) *
                                                Matrix.CreateTranslation(new Vector3(0, 1, 1));
 
-    private static readonly Matrix PofLid = Matrix.CreateTranslation(new Vector3(0, 0, 1));
+    private static readonly Matrix MatrixFaceToCubeLid = Matrix.CreateTranslation(new Vector3(0, 0, 1));
 
 
     private static Matrix GetRotationMatrix(Rotation rotation)
     {
         return rotation switch
         {
-            Rotation.Rotate90 => MatrixRight,
-            Rotation.Rotate180 => MatrixDown,
-            Rotation.Rotate270 => MatrixLeft,
-            Rotation.Rotate0 => MatrixUp,
-            _ => MatrixUp
+            Rotation.Rotate90 => MatrixRotateRight,
+            Rotation.Rotate180 => MatrixRotateDown,
+            Rotation.Rotate270 => MatrixRotateLeft,
+            Rotation.Rotate0 => MatrixRotateUp,
+            _ => MatrixRotateUp
         };
-    }
-
-    private static ref FaceInfo GetFace(ref BlockInfo block, Face face, Rotation rotation)
-    {
-        switch (rotation)
-        {
-            case Rotation.Rotate0:
-                switch (face)
-                {
-                    case Face.Left: return ref block.Left;
-                    case Face.Right: return ref block.Right;
-                    case Face.Top: return ref block.Top;
-                    case Face.Bottom: return ref block.Bottom;
-                    default: return ref block.Lid;
-                }
-            case Rotation.Rotate90:
-                switch (face)
-                {
-                    case Face.Left: return ref block.Top;
-                    case Face.Right: return ref block.Bottom;
-                    case Face.Top: return ref block.Right;
-                    case Face.Bottom: return ref block.Left;
-                    default: return ref block.Lid;
-                }
-            case Rotation.Rotate180:
-                switch (face)
-                {
-                    case Face.Left: return ref block.Right;
-                    case Face.Right: return ref block.Left;
-                    case Face.Top: return ref block.Bottom;
-                    case Face.Bottom: return ref block.Top;
-                    default: return ref block.Lid;
-                }
-            case Rotation.Rotate270:
-                switch (face)
-                {
-                    case Face.Left: return ref block.Bottom;
-                    case Face.Right: return ref block.Top;
-                    case Face.Top: return ref block.Left;
-                    case Face.Bottom: return ref block.Right;
-                    default: return ref block.Lid;
-                }
-            default: throw new InvalidOperationException();
-        }
     }
 
     private static void RemapFaces(ref BlockInfo block, Rotation rotation, out FaceInfo top, out FaceInfo bottom, out FaceInfo left, out FaceInfo right)
@@ -96,6 +51,50 @@ public static class SlopeGenerator
         bottom = GetFace(ref block, Face.Bottom, rotation);
         left = GetFace(ref block, Face.Left, rotation);
         right = GetFace(ref block, Face.Right, rotation);
+        
+        static ref FaceInfo GetFace(ref BlockInfo block, Face face, Rotation rotation)
+        {
+            switch (rotation)
+            {
+                case Rotation.Rotate0:
+                    switch (face)
+                    {
+                        case Face.Left: return ref block.Left;
+                        case Face.Right: return ref block.Right;
+                        case Face.Top: return ref block.Top;
+                        case Face.Bottom: return ref block.Bottom;
+                        default: return ref block.Lid;
+                    }
+                case Rotation.Rotate90:
+                    switch (face)
+                    {
+                        case Face.Left: return ref block.Top;
+                        case Face.Right: return ref block.Bottom;
+                        case Face.Top: return ref block.Right;
+                        case Face.Bottom: return ref block.Left;
+                        default: return ref block.Lid;
+                    }
+                case Rotation.Rotate180:
+                    switch (face)
+                    {
+                        case Face.Left: return ref block.Right;
+                        case Face.Right: return ref block.Left;
+                        case Face.Top: return ref block.Bottom;
+                        case Face.Bottom: return ref block.Top;
+                        default: return ref block.Lid;
+                    }
+                case Rotation.Rotate270:
+                    switch (face)
+                    {
+                        case Face.Left: return ref block.Bottom;
+                        case Face.Right: return ref block.Top;
+                        case Face.Top: return ref block.Left;
+                        case Face.Bottom: return ref block.Right;
+                        default: return ref block.Lid;
+                    }
+                default: throw new InvalidOperationException();
+            }
+        }
     }
 
     private static Rotation Subtract(Rotation lhs, Rotation rhs)
@@ -110,19 +109,20 @@ public static class SlopeGenerator
         return (Rotation)tmpRot;
     }
 
-    private static Vector3 MapUv(ref FaceInfo face, Rotation rotationBlock, float x, float y) => MapUv(face.TileGraphic, face.Rotation, rotationBlock, face.Flip, x, y);
-
-    private static Vector3 MapUv(ushort tileGraphic, Rotation rotation, Rotation rotationBlock, bool flip, float x, float y)
+    private static Vector3 MapUv(ref FaceInfo face, Rotation rotationBlock, float x, float y)
     {
-        if (flip)
+        var rotation = face.Rotation;
+        var x1 = x;
+        var y1 = y;
+        if (face.Flip)
         {
             if (rotationBlock is Rotation.Rotate90 or Rotation.Rotate270)
             {
-                y = 1 - y;
+                y1 = 1 - y1;
             }
             else
             {
-                x = 1 - x;
+                x1 = 1 - x1;
             }
         }
 
@@ -132,42 +132,35 @@ public static class SlopeGenerator
         switch (rotation)
         {
             case Rotation.Rotate90:
-                tmp = 1 - x;
-                x = y;
-                y = tmp;
+                tmp = 1 - x1;
+                x1 = y1;
+                y1 = tmp;
                 break;
             case Rotation.Rotate180:
-                x = 1 - x;
-                y = 1 - y;
+                x1 = 1 - x1;
+                y1 = 1 - y1;
                 break;
             case Rotation.Rotate270:
-                tmp = 1 - y;
-                y = x;
-                x = tmp;
+                tmp = 1 - y1;
+                y1 = x1;
+                x1 = tmp;
                 break;
         }
         
-        return new Vector3(x, y, tileGraphic);
+        return new Vector3(x1, y1, face.TileGraphic);
     }
-    
-    private static Matrix GetPointOnFaceMatrix(Face face)
+
+    private static VertexPositionTile GetVertexOnFace(Vector3 point, Vector2 uv, ref FaceInfo face, Face direction, Matrix translation, Rotation uvRotation = Rotation.Rotate0)
     {
-        return face switch
+        var matrix = direction switch
         {
-            Face.Left => PofLeft,
-            Face.Right => PofRight,
-            Face.Top => PofTop,
-            Face.Bottom => PofBottom,
-            Face.Lid => PofLid,
+            Face.Left => MatrixFaceToCubeLeft,
+            Face.Right => MatrixFaceToCubeRight,
+            Face.Top => MatrixFaceToCubeTop,
+            Face.Bottom => MatrixFaceToCubeBottom,
+            Face.Lid => MatrixFaceToCubeLid,
             _ => throw new ArgumentOutOfRangeException(nameof(face), face, null)
         };
-    }
-
-    private record struct Buffers(BufferArray<VertexPositionTile> Vertices, BufferArray<short> Indices, BufferArray<(float drawOrder, short index)> FlatIndices);
-
-    private static VertexPositionTile GetFaceVertex(Vector3 point, Vector2 uv, ref FaceInfo face, Face direction, Matrix translation, Rotation uvRotation = Rotation.Rotate0)
-    {
-        var matrix = GetPointOnFaceMatrix(direction);
 
         matrix *= translation;
 
@@ -176,62 +169,6 @@ public static class SlopeGenerator
 
     private static VertexPositionTile GetVertex(Vector3 point, Vector2 uv, ref FaceInfo face, Matrix translation, Rotation uvRotation = Rotation.Rotate0) =>
         new(Vector3.Transform(point, translation), MapUv(ref face, uvRotation, uv.X, uv.Y));
-
-    private static void Add(Buffers buffers, ref FaceInfo face, float drawOrder, int index, bool oppositeFlat = false)
-    {
-        if (face.Flat || oppositeFlat)
-            buffers.FlatIndices.Add((drawOrder, (short)index));
-        else
-            buffers.Indices.Add((short)index);
-    }
-
-    private static void AddSimpleFace(ref FaceInfo face, float drawOrder, Face normal, Buffers buffers, Matrix translation, bool oppositeFlat = false)
-    {
-        if (face.TileGraphic == 0)
-            return;
-
-        var start = buffers.Vertices.Length;
-        
-        if (face.Flat && oppositeFlat)
-        {
-            // render on both sides
-            buffers.Vertices.Add(GetFaceVertex(new Vector3(0, 0, 0), new Vector2(0, 0), ref face, normal, translation));
-            buffers.Vertices.Add(GetFaceVertex(new Vector3(1, 0, 0), new Vector2(1, 0), ref face, normal, translation));
-            buffers.Vertices.Add(GetFaceVertex(new Vector3(0, 1, 0), new Vector2(0, 1), ref face, normal, translation));
-            buffers.Vertices.Add(GetFaceVertex(new Vector3(1, 1, 0), new Vector2(1, 1), ref face, normal, translation));
-            
-            Add(buffers, ref face, drawOrder, start + 0);
-            Add(buffers, ref face, drawOrder, start + 1);
-            Add(buffers, ref face, drawOrder, start + 2);
-            Add(buffers, ref face, drawOrder, start + 1);
-            Add(buffers, ref face, drawOrder, start + 3);
-            Add(buffers, ref face, drawOrder, start + 2);
-
-            start = buffers.Vertices.Length;
-        }
-        
-        var z = oppositeFlat ? -0.999f : 0;
-        buffers.Vertices.Add(GetFaceVertex(new Vector3(0, 0, z), new Vector2(0, 0), ref face, normal, translation));
-        buffers.Vertices.Add(GetFaceVertex(new Vector3(1, 0, z), new Vector2(1, 0), ref face, normal, translation));
-        buffers.Vertices.Add(GetFaceVertex(new Vector3(0, 1, z), new Vector2(0, 1), ref face, normal, translation));
-        buffers.Vertices.Add(GetFaceVertex(new Vector3(1, 1, z), new Vector2(1, 1), ref face, normal, translation));
-
-        Add(buffers, ref face, drawOrder, start + 0, oppositeFlat);
-        Add(buffers, ref face, drawOrder, start + 1, oppositeFlat);
-        Add(buffers, ref face, drawOrder, start + 2, oppositeFlat);
-        Add(buffers, ref face, drawOrder, start + 1, oppositeFlat);
-        Add(buffers, ref face, drawOrder, start + 3, oppositeFlat);
-        Add(buffers, ref face, drawOrder, start + 2, oppositeFlat);
-    }
-    
-    private static void SlopeNone(ref BlockInfo block, float drawOrder, Matrix translationMatrix, Buffers buffers)
-    {
-        AddSimpleFace(ref block.Lid, drawOrder + 0.5f, Face.Lid, buffers, translationMatrix);
-        AddSimpleFace(ref block.Left, drawOrder, Face.Left, buffers, translationMatrix, block.Right.Flat);
-        AddSimpleFace(ref block.Right, drawOrder, Face.Right, buffers, translationMatrix, block.Left.Flat);
-        AddSimpleFace(ref block.Top, drawOrder, Face.Top, buffers, translationMatrix, block.Bottom.Flat);
-        AddSimpleFace(ref block.Bottom, drawOrder, Face.Bottom, buffers, translationMatrix, block.Top.Flat);
-    }
 
     private static ref FaceInfo GetDiagonalFace(Rotation blockRotation, ref FaceInfo top, ref FaceInfo right)
     {
@@ -243,6 +180,67 @@ public static class SlopeGenerator
         }
 
         return ref diag;
+    }
+
+    private static void AddIndex(Buffers buffers, ref FaceInfo face, float drawOrder, int index, bool oppositeFlat = false)
+    {
+        if (face.Flat || oppositeFlat)
+            buffers.FlatIndices.Add((drawOrder, (short)index));
+        else
+            buffers.Indices.Add((short)index);
+    }
+
+    private static void AddSimpleFace(ref FaceInfo face, float drawOrder, Face side, Buffers buffers, Matrix translation, bool oppositeFlat = false) =>
+        AddSimpleFace(ref face, drawOrder, side, buffers, translation, Vector2.Zero, Vector2.One, 0, Rotation.Rotate0, oppositeFlat, 1);
+
+    private static void AddSimpleFace(ref FaceInfo face, float drawOrder, Face side, Buffers buffers, Matrix translation, Vector2 min, Vector2 max, float depth,
+        Rotation uvRotation, bool oppositeFlat, float oppositeDepth)
+    {
+        // a square face on the specified side.
+        if (face.TileGraphic == 0)
+            return;
+
+        var start = buffers.Vertices.Length;
+
+        if (face.Flat && oppositeFlat)
+        {
+            // render on both sides
+            buffers.Vertices.Add(GetVertexOnFace(new Vector3(min.X, min.Y, -depth), new Vector2(min.X, min.Y), ref face, side, translation, uvRotation));
+            buffers.Vertices.Add(GetVertexOnFace(new Vector3(max.X, min.Y, -depth), new Vector2(max.X, min.Y), ref face, side, translation, uvRotation));
+            buffers.Vertices.Add(GetVertexOnFace(new Vector3(min.X, max.Y, -depth), new Vector2(min.X, max.Y), ref face, side, translation, uvRotation));
+            buffers.Vertices.Add(GetVertexOnFace(new Vector3(max.X, max.Y, -depth), new Vector2(max.X, max.Y), ref face, side, translation, uvRotation));
+
+            AddIndex(buffers, ref face, drawOrder, start + 0);
+            AddIndex(buffers, ref face, drawOrder, start + 1);
+            AddIndex(buffers, ref face, drawOrder, start + 2);
+            AddIndex(buffers, ref face, drawOrder, start + 1);
+            AddIndex(buffers, ref face, drawOrder, start + 3);
+            AddIndex(buffers, ref face, drawOrder, start + 2);
+
+            start = buffers.Vertices.Length;
+        }
+
+        var oz = oppositeFlat ? -oppositeDepth + 0.01f : -depth;
+        buffers.Vertices.Add(GetVertexOnFace(new Vector3(min.X, min.Y, oz), new Vector2(min.X, min.Y), ref face, side, translation, uvRotation));
+        buffers.Vertices.Add(GetVertexOnFace(new Vector3(max.X, min.Y, oz), new Vector2(max.X, min.Y), ref face, side, translation, uvRotation));
+        buffers.Vertices.Add(GetVertexOnFace(new Vector3(min.X, max.Y, oz), new Vector2(min.X, max.Y), ref face, side, translation, uvRotation));
+        buffers.Vertices.Add(GetVertexOnFace(new Vector3(max.X, max.Y, oz), new Vector2(max.X, max.Y), ref face, side, translation, uvRotation));
+
+        AddIndex(buffers, ref face, drawOrder, start + 0, oppositeFlat);
+        AddIndex(buffers, ref face, drawOrder, start + 1, oppositeFlat);
+        AddIndex(buffers, ref face, drawOrder, start + 2, oppositeFlat);
+        AddIndex(buffers, ref face, drawOrder, start + 1, oppositeFlat);
+        AddIndex(buffers, ref face, drawOrder, start + 3, oppositeFlat);
+        AddIndex(buffers, ref face, drawOrder, start + 2, oppositeFlat);
+    }
+
+    private static void SlopeNone(ref BlockInfo block, float drawOrder, Matrix translationMatrix, Buffers buffers)
+    {
+        AddSimpleFace(ref block.Lid, drawOrder + 0.5f, Face.Lid, buffers, translationMatrix);
+        AddSimpleFace(ref block.Left, drawOrder, Face.Left, buffers, translationMatrix, block.Right.Flat);
+        AddSimpleFace(ref block.Right, drawOrder, Face.Right, buffers, translationMatrix, block.Left.Flat);
+        AddSimpleFace(ref block.Top, drawOrder, Face.Top, buffers, translationMatrix, block.Bottom.Flat);
+        AddSimpleFace(ref block.Bottom, drawOrder, Face.Bottom, buffers, translationMatrix, block.Top.Flat);
     }
 
     private static void SlopeDiagonal(ref BlockInfo block,float drawOrder, Rotation blockRotation, Matrix translationMatrix, Buffers buffers)
@@ -261,9 +259,9 @@ public static class SlopeGenerator
             buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 1), new Vector2(1, 1), ref block.Lid, translation, blockRotation));
             buffers.Vertices.Add(GetVertex(new Vector3(0, 1, 1), new Vector2(0, 1), ref block.Lid, translation, blockRotation));
 
-            Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 0);
-            Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 1);
-            Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 2);
+            AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 0);
+            AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 1);
+            AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 2);
         }
         
         ref var diagonal = ref GetDiagonalFace(blockRotation, ref top, ref right);
@@ -277,12 +275,12 @@ public static class SlopeGenerator
             buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 0), new Vector2(0, 1), ref diagonal, translation));
             buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 0), new Vector2(1, 1), ref diagonal, translation));
             
-            Add(buffers, ref diagonal, drawOrder, start + 0);
-            Add(buffers, ref diagonal, drawOrder, start + 1);
-            Add(buffers, ref diagonal, drawOrder, start + 2);
-            Add(buffers, ref diagonal, drawOrder, start + 1);
-            Add(buffers, ref diagonal, drawOrder, start + 3);
-            Add(buffers, ref diagonal, drawOrder, start + 2);
+            AddIndex(buffers, ref diagonal, drawOrder, start + 0);
+            AddIndex(buffers, ref diagonal, drawOrder, start + 1);
+            AddIndex(buffers, ref diagonal, drawOrder, start + 2);
+            AddIndex(buffers, ref diagonal, drawOrder, start + 1);
+            AddIndex(buffers, ref diagonal, drawOrder, start + 3);
+            AddIndex(buffers, ref diagonal, drawOrder, start + 2);
         }
         
     }
@@ -304,12 +302,12 @@ public static class SlopeGenerator
             buffers.Vertices.Add(GetVertex(new Vector3(0, 1, slopeFrom), new Vector2(0, 1), ref block.Lid, translation, blockRotation));
             buffers.Vertices.Add(GetVertex(new Vector3(1, 1, slopeFrom), new Vector2(1, 1), ref block.Lid, translation, blockRotation));
 
-            Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 0);
-            Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 1);
-            Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 2);
-            Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 1);
-            Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 3);
-            Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 2);
+            AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 0);
+            AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 1);
+            AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 2);
+            AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 1);
+            AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 3);
+            AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 2);
         }
 
 
@@ -322,16 +320,16 @@ public static class SlopeGenerator
             buffers.Vertices.Add(GetVertex(new Vector3(0, 1, slopeFrom), new Vector2(1, 1 - slopeFrom), ref left, translation));
             buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 0), new Vector2(0, 1), ref left, translation));
 
-            Add(buffers, ref left, drawOrder, start + 0, right.Flat);
-            Add(buffers, ref left, drawOrder, start + 1, right.Flat);
-            Add(buffers, ref left, drawOrder, start + 2, right.Flat);
+            AddIndex(buffers, ref left, drawOrder, start + 0, right.Flat);
+            AddIndex(buffers, ref left, drawOrder, start + 1, right.Flat);
+            AddIndex(buffers, ref left, drawOrder, start + 2, right.Flat);
 
             if (slopeFrom != 0)
             {
                 buffers.Vertices.Add(GetVertex(new Vector3(0, 1, 0), new Vector2(1, 1), ref left, translation));
-                Add(buffers, ref left, drawOrder, start + 1, right.Flat);
-                Add(buffers, ref left, drawOrder, start + 3, right.Flat);
-                Add(buffers, ref left, drawOrder, start + 2, right.Flat);
+                AddIndex(buffers, ref left, drawOrder, start + 1, right.Flat);
+                AddIndex(buffers, ref left, drawOrder, start + 3, right.Flat);
+                AddIndex(buffers, ref left, drawOrder, start + 2, right.Flat);
             }
         }
 
@@ -352,19 +350,19 @@ public static class SlopeGenerator
 
             if (slopeFrom != 0)
             {
-                Add(buffers, ref right, drawOrder, start + 0, left.Flat);
-                Add(buffers, ref right, drawOrder, start + 1, left.Flat);
-                Add(buffers, ref right, drawOrder, start + 2, left.Flat);
-                Add(buffers, ref right, drawOrder, start + 1, left.Flat);
-                Add(buffers, ref right, drawOrder, start + 3, left.Flat);
-                Add(buffers, ref right, drawOrder, start + 2, left.Flat);
+                AddIndex(buffers, ref right, drawOrder, start + 0, left.Flat);
+                AddIndex(buffers, ref right, drawOrder, start + 1, left.Flat);
+                AddIndex(buffers, ref right, drawOrder, start + 2, left.Flat);
+                AddIndex(buffers, ref right, drawOrder, start + 1, left.Flat);
+                AddIndex(buffers, ref right, drawOrder, start + 3, left.Flat);
+                AddIndex(buffers, ref right, drawOrder, start + 2, left.Flat);
             }
             else
             {
 
-                Add(buffers,  ref right, drawOrder, start + 0, left.Flat);
-                Add(buffers,  ref right, drawOrder, start + 2, left.Flat);
-                Add(buffers,  ref right, drawOrder, start + 1, left.Flat);
+                AddIndex(buffers,  ref right, drawOrder, start + 0, left.Flat);
+                AddIndex(buffers,  ref right, drawOrder, start + 2, left.Flat);
+                AddIndex(buffers,  ref right, drawOrder, start + 1, left.Flat);
             }
         }
 
@@ -377,12 +375,12 @@ public static class SlopeGenerator
             buffers.Vertices.Add(GetVertex(new Vector3(1, 0, 0), new Vector2(0, 1), ref top, translation));
             buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 0), new Vector2(1, 1), ref top, translation));
 
-            Add(buffers, ref top, drawOrder, start + 0);
-            Add(buffers, ref top, drawOrder, start + 1);
-            Add(buffers, ref top, drawOrder, start + 2);
-            Add(buffers, ref top, drawOrder, start + 1);
-            Add(buffers, ref top, drawOrder, start + 3);
-            Add(buffers, ref top, drawOrder, start + 2);
+            AddIndex(buffers, ref top, drawOrder, start + 0);
+            AddIndex(buffers, ref top, drawOrder, start + 1);
+            AddIndex(buffers, ref top, drawOrder, start + 2);
+            AddIndex(buffers, ref top, drawOrder, start + 1);
+            AddIndex(buffers, ref top, drawOrder, start + 3);
+            AddIndex(buffers, ref top, drawOrder, start + 2);
         }
 
         if (bottom.TileGraphic != 0)
@@ -394,12 +392,12 @@ public static class SlopeGenerator
             buffers.Vertices.Add(GetVertex(new Vector3(0, 1, 0), new Vector2(0, 1), ref bottom, translation));
             buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 0), new Vector2(1, 1), ref bottom, translation));
 
-            Add(buffers, ref bottom, drawOrder, start + 0);
-            Add(buffers, ref bottom, drawOrder, start + 1);
-            Add(buffers, ref bottom, drawOrder, start + 2);
-            Add(buffers, ref bottom, drawOrder, start + 1);
-            Add(buffers, ref bottom, drawOrder, start + 3);
-            Add(buffers, ref bottom, drawOrder, start + 2);
+            AddIndex(buffers, ref bottom, drawOrder, start + 0);
+            AddIndex(buffers, ref bottom, drawOrder, start + 1);
+            AddIndex(buffers, ref bottom, drawOrder, start + 2);
+            AddIndex(buffers, ref bottom, drawOrder, start + 1);
+            AddIndex(buffers, ref bottom, drawOrder, start + 3);
+            AddIndex(buffers, ref bottom, drawOrder, start + 2);
         }
     }
 
@@ -422,9 +420,9 @@ public static class SlopeGenerator
                 buffers.Vertices.Add(GetVertex(new Vector3(0, 1, 0), new Vector2(1, 1), ref block.Left, translation));
                 buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 0), new Vector2(0, 1), ref block.Left, translation));
 
-                Add(buffers, ref block.Left, drawOrder, start + 0);
-                Add(buffers, ref block.Left, drawOrder, start + 1);
-                Add(buffers, ref block.Left, drawOrder, start + 2);
+                AddIndex(buffers, ref block.Left, drawOrder, start + 0);
+                AddIndex(buffers, ref block.Left, drawOrder, start + 1);
+                AddIndex(buffers, ref block.Left, drawOrder, start + 2);
             }
             
             if (block.Bottom.TileGraphic != 0)
@@ -435,9 +433,9 @@ public static class SlopeGenerator
                 buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 0), new Vector2(1, 1), ref block.Bottom, translation));
                 buffers.Vertices.Add(GetVertex(new Vector3(0, 1, 0), new Vector2(1, 0), ref block.Bottom, translation));
 
-                Add(buffers, ref block.Bottom, drawOrder, start + 0);
-                Add(buffers, ref block.Bottom, drawOrder, start + 1);
-                Add(buffers, ref block.Bottom, drawOrder, start + 2);
+                AddIndex(buffers, ref block.Bottom, drawOrder, start + 0);
+                AddIndex(buffers, ref block.Bottom, drawOrder, start + 1);
+                AddIndex(buffers, ref block.Bottom, drawOrder, start + 2);
             }
 
             if (diagonal.TileGraphic != 0)
@@ -448,9 +446,9 @@ public static class SlopeGenerator
                 buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 0), new Vector2(1, 1), ref diagonal, translation));
                 buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 0), new Vector2(0, 1), ref diagonal, translation));
 
-                Add(buffers, ref diagonal, drawOrder, start + 0);
-                Add(buffers, ref diagonal, drawOrder, start + 1);
-                Add(buffers, ref diagonal, drawOrder, start + 2);
+                AddIndex(buffers, ref diagonal, drawOrder, start + 0);
+                AddIndex(buffers, ref diagonal, drawOrder, start + 1);
+                AddIndex(buffers, ref diagonal, drawOrder, start + 2);
             }
         }
         else
@@ -466,9 +464,9 @@ public static class SlopeGenerator
                 buffers.Vertices.Add(GetVertex(new Vector3(1, 1, 1), new Vector2(1, 1), ref block.Lid, translation, blockRotation));
                 buffers.Vertices.Add(GetVertex(new Vector3(0, 1, 1), new Vector2(0, 1), ref block.Lid, translation, blockRotation));
 
-                Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 0);
-                Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 1);
-                Add(buffers, ref block.Lid, drawOrder + 0.5f, start + 2);
+                AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 0);
+                AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 1);
+                AddIndex(buffers, ref block.Lid, drawOrder + 0.5f, start + 2);
             }
 
             if (diagonal.TileGraphic != 0)
@@ -479,11 +477,54 @@ public static class SlopeGenerator
                 buffers.Vertices.Add(GetVertex(new Vector3(0, 0, 1), new Vector2(1, 0), ref block.Left, translation));
                 buffers.Vertices.Add(GetVertex(new Vector3(1, 0, 0), new Vector2(0.5f, 1), ref block.Left, translation));
 
-                Add(buffers, ref block.Left, drawOrder, start + 0);
-                Add(buffers, ref block.Left, drawOrder, start + 1);
-                Add(buffers, ref block.Left, drawOrder, start + 2);
+                AddIndex(buffers, ref block.Left, drawOrder, start + 0);
+                AddIndex(buffers, ref block.Left, drawOrder, start + 1);
+                AddIndex(buffers, ref block.Left, drawOrder, start + 2);
             }
         }
+    }
+    
+    private static void SlopeHalfBlock(ref BlockInfo block, float drawOrder, Rotation blockRotation, Matrix translationMatrix, Buffers buffers)
+    {
+        // based on left
+        var translation = GetRotationMatrix(blockRotation) * translationMatrix;
+        RemapFaces(ref block, blockRotation, out var top, out var bottom, out var left, out var right);
+
+        const float width = 24 / 64f;// 24 of 64 pixels wide wall
+
+        AddSimpleFace(ref block.Lid, drawOrder + 0.5f, Face.Lid, buffers, translation, Vector2.Zero, new Vector2(width, 1.0f), 0, blockRotation, false, 1);
+        AddSimpleFace(ref left, drawOrder, Face.Left, buffers, translation, Vector2.Zero, Vector2.One, 0, Rotation.Rotate0, right.Flat, width);
+        AddSimpleFace(ref right, drawOrder, Face.Right, buffers, translation, Vector2.Zero, Vector2.One, 1 - width, Rotation.Rotate0, left.Flat, 1);
+        AddSimpleFace(ref top, drawOrder, Face.Top, buffers, translation, new Vector2(1-width, 0), Vector2.One, 0, Rotation.Rotate0, bottom.Flat, 1);
+        AddSimpleFace(ref bottom, drawOrder, Face.Bottom, buffers, translation, Vector2.Zero, new Vector2(width, 1), 0, Rotation.Rotate0, top.Flat, 1);
+    }
+
+    private static void SlopeCornerBlock(ref BlockInfo block, float drawOrder, Rotation blockRotation, Matrix translationMatrix, Buffers buffers)
+    {
+        // based on top left
+        var translation = GetRotationMatrix(blockRotation) * translationMatrix;
+        RemapFaces(ref block, blockRotation, out var top, out var bottom, out var left, out var right);
+
+        const float width = 24 / 64f;// 24 of 64 pixels wide wall
+
+        AddSimpleFace(ref block.Lid, drawOrder + 0.5f, Face.Lid, buffers, translation, Vector2.Zero, new Vector2(width, width), 0, blockRotation, false, 1);
+        AddSimpleFace(ref left, drawOrder, Face.Left, buffers, translation, Vector2.Zero, new Vector2(width, 1), 0, Rotation.Rotate0, right.Flat, width);
+        AddSimpleFace(ref right, drawOrder, Face.Right, buffers, translation, new Vector2(1 - width, 0), Vector2.One, 1 - width, Rotation.Rotate0, left.Flat, 1);
+        AddSimpleFace(ref top, drawOrder, Face.Top, buffers, translation, new Vector2(1 - width, 0), Vector2.One, 0, Rotation.Rotate0, bottom.Flat, width);
+        AddSimpleFace(ref bottom, drawOrder, Face.Bottom, buffers, translation, Vector2.Zero, new Vector2(width, 1), 1 - width, Rotation.Rotate0, top.Flat, 1);
+    }
+
+    private static void SlopeCentreBlock(ref BlockInfo block, float drawOrder, Matrix translationMatrix, Buffers buffers)
+    {
+        const float width = 16 / 64f;// 16 of 64 pixels wide wall
+        const float min = (1 - width) / 2;
+        const float max = min + width;
+        
+        AddSimpleFace(ref block.Lid, drawOrder + 0.5f, Face.Lid, buffers, translationMatrix, new Vector2(min, min), new Vector2(max, max), 0, Rotation.Rotate0, false, 1);
+        AddSimpleFace(ref block.Left, drawOrder, Face.Left, buffers, translationMatrix, new Vector2(min, 0), new Vector2(max, 1), min, Rotation.Rotate0, block.Right.Flat, max);
+        AddSimpleFace(ref block.Right, drawOrder, Face.Right, buffers, translationMatrix, new Vector2(min, 0), new Vector2(max, 1), min, Rotation.Rotate0, block.Left.Flat, max);
+        AddSimpleFace(ref block.Top, drawOrder, Face.Top, buffers, translationMatrix, new Vector2(min, 0), new Vector2(max, 1), min, Rotation.Rotate0, block.Bottom.Flat, max);
+        AddSimpleFace(ref block.Bottom, drawOrder, Face.Bottom, buffers, translationMatrix, new Vector2(min, 0), new Vector2(max, 1), min, Rotation.Rotate0, block.Top.Flat, max);
     }
 
     public static void Push(ref BlockInfo block, Vector3 offset, BufferArray<VertexPositionTile> vertices, BufferArray<short> indices, BufferArray<(float drawOrder, short index)> flatIndices)
@@ -606,16 +647,31 @@ public static class SlopeGenerator
                 SlopeDiagonalSlope(ref block, offset.Z, Rotation.Rotate270, translation, buffers);
                 break;
             case SlopeType.PartialBlockLeft:
-            case SlopeType.PartialBlockRight:
+                SlopeHalfBlock(ref block, offset.Z, Rotation.Rotate0, translation, buffers);
+                break;
             case SlopeType.PartialBlockTop:
+                SlopeHalfBlock(ref block, offset.Z, Rotation.Rotate90, translation, buffers);
+                break;
+            case SlopeType.PartialBlockRight:
+                SlopeHalfBlock(ref block, offset.Z, Rotation.Rotate180, translation, buffers);
+                break;
             case SlopeType.PartialBlockBottom:
+                SlopeHalfBlock(ref block, offset.Z, Rotation.Rotate270, translation, buffers);
+                break;
             case SlopeType.PartialBlockTopLeftCorner:
+                SlopeCornerBlock(ref block, offset.Z, Rotation.Rotate0, translation, buffers);
+                break;
             case SlopeType.PartialBlockTopRightCorner:
-            case SlopeType.PartialBlockBottomLeftCorner:
+                SlopeCornerBlock(ref block, offset.Z, Rotation.Rotate90, translation, buffers);
+                break;
             case SlopeType.PartialBlockBottomRightCorner:
+                SlopeCornerBlock(ref block, offset.Z, Rotation.Rotate180, translation, buffers);
+                break;
+            case SlopeType.PartialBlockBottomLeftCorner:
+                SlopeCornerBlock(ref block, offset.Z, Rotation.Rotate270, translation, buffers);
+                break;
             case SlopeType.PartialBlockCentre:
-                // TODO partial blocks
-                SlopeNone(ref block, offset.Z, translation, buffers);
+                SlopeCentreBlock(ref block, offset.Z, translation, buffers);
                 break;
             case SlopeType.Reserved:
                 break;
@@ -626,4 +682,6 @@ public static class SlopeGenerator
                 break;
         }
     }
+    
+    private record struct Buffers(BufferArray<VertexPositionTile> Vertices, BufferArray<short> Indices, BufferArray<(float drawOrder, short index)> FlatIndices);
 }
