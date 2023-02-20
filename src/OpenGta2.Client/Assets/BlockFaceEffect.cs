@@ -6,9 +6,17 @@ namespace OpenGta2.Client.Effects;
 
 public class BlockFaceEffect : Effect, IEffectMatrices
 {
+    public const int MaxLights = 6;
+
     private readonly EffectParameter _worldViewProjectionParam;
+    private readonly EffectParameter _worldParam;
     private readonly EffectParameter _tilesParam;
     private readonly EffectParameter _flatParam;
+    private readonly EffectParameter _lightPositionsParam;
+    private readonly EffectParameter _lightColorsParam;
+    private readonly EffectParameter _lightRadiiParam;
+    private readonly EffectParameter _lightIntensitiesParam;
+    private readonly EffectParameter _lightCountParam;
 
     private DirtyFlags _dirtyFlags;
     
@@ -18,11 +26,23 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     private Matrix _world;
     private Texture2D? _tiles;
 
+    private readonly Vector3[] _lightPositions = new Vector3[MaxLights];
+    private readonly Vector4[] _lightColors = new Vector4[MaxLights];
+    private readonly float[] _lightRadii = new float[MaxLights];
+    private readonly float[] _lightIntensities = new float[MaxLights];
+    private int _lightCount;
+
     public BlockFaceEffect(Effect cloneSource) : base(cloneSource)
     {
         _worldViewProjectionParam = Parameters["WorldViewProjection"];
+        _worldParam = Parameters["World"];
         _tilesParam = Parameters["Tiles"];
         _flatParam = Parameters["Flat"];
+        _lightPositionsParam = Parameters["LightPositions"];
+        _lightColorsParam = Parameters["LightColors"];
+        _lightRadiiParam = Parameters["LightRadii"];
+        _lightIntensitiesParam = Parameters["LightIntensities"];
+        _lightCountParam = Parameters["LightCount"];
     }
 
     public Matrix Projection
@@ -40,7 +60,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     public Matrix World
     {
         get => _world;
-        set => Set(ref _world, value, DirtyFlags.WorldViewProjection);
+        set => Set(ref _world, value, DirtyFlags.WorldViewProjection | DirtyFlags.World);
     }
 
     public Texture2D? Tiles
@@ -53,6 +73,26 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     {
         get => _flat;
         set => Set(ref _flat, value, DirtyFlags.Flat);
+    }
+
+    public void SetLights(Span<Light> lights)
+    {
+        var index = 0;
+        foreach (var light in lights)
+        {
+            _lightPositions[index] = light.Position;
+            _lightColors[index] = light.Color.ToVector4();
+            _lightRadii[index] = light.Radius;
+            _lightIntensities[index] = light.Intensity;
+            _dirtyFlags |= DirtyFlags.Lights;
+
+            index++;
+            if (index == MaxLights)
+                break;
+        }
+
+        _lightCount = index;
+        _dirtyFlags |= DirtyFlags.LightCount;
     }
 
     private void Set<T>(ref T field, T value, DirtyFlags flag)
@@ -72,6 +112,10 @@ public class BlockFaceEffect : Effect, IEffectMatrices
         {
             _worldViewProjectionParam.SetValue(World * View * Projection);
         }
+        if ((_dirtyFlags & DirtyFlags.World) != 0)
+        {
+            _worldParam.SetValue(World);
+        }
 
         if ((_dirtyFlags & DirtyFlags.Tiles) != 0)
         {
@@ -81,6 +125,19 @@ public class BlockFaceEffect : Effect, IEffectMatrices
         if ((_dirtyFlags & DirtyFlags.Flat) != 0)
         {
             _flatParam.SetValue(_flat);
+        }
+
+        if ((_dirtyFlags & DirtyFlags.Lights) != 0)
+        {
+            _lightPositionsParam.SetValue(_lightPositions);
+            _lightColorsParam.SetValue(_lightColors);
+            _lightRadiiParam.SetValue(_lightRadii);
+            _lightIntensitiesParam.SetValue(_lightIntensities);
+        }
+
+        if ((_dirtyFlags & DirtyFlags.LightCount) != 0)
+        {
+            _lightCountParam.SetValue(_lightCount);
         }
 
         _dirtyFlags = DirtyFlags.None;
@@ -97,5 +154,8 @@ public class BlockFaceEffect : Effect, IEffectMatrices
         WorldViewProjection = 1,
         Tiles = 2,
         Flat = 4,
+        Lights = 8,
+        LightCount = 16,
+        World = 32
     }
 }

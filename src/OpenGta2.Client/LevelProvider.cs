@@ -15,7 +15,7 @@ public class LevelProvider
 {
     private readonly Vector3[] _cameraCornersBuffer = new Vector3[8];
 
-    private const int ChunkSize = 8;
+    public const int ChunkSize = 4;
     private int _maxChunksX;
     private int _maxChunksY;
     private Rectangle _chunkBounds;

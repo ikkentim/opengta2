@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Client.Effects;
 using OpenGta2.Data.Style;
@@ -77,7 +78,8 @@ public class MapComponent : DrawableGameComponent
     public override void Draw(GameTime gameTime)
     {
         GraphicsDevice.SamplerStates[0] = SamplerState.AnisotropicClamp;
-
+        
+        Span<Light> lights = stackalloc Light[BlockFaceEffect.MaxLights];
 
         _blockFaceEffect!.View = _camera.ViewMatrix;
         _blockFaceEffect.Projection = _camera.Projection;
@@ -91,6 +93,9 @@ public class MapComponent : DrawableGameComponent
             _game.GraphicsDevice.SetVertexBuffer(chunk.Vertices);
             _blockFaceEffect.World = chunk.Translation;
             
+            var chunkLights = CollectLights(lights, chunk.ChunkLocation);
+            _blockFaceEffect.SetLights(chunkLights);
+
             foreach (var pass in _blockFaceEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
@@ -99,7 +104,7 @@ public class MapComponent : DrawableGameComponent
         }
         
         _blockFaceEffect.Flat = true;
-        
+
         foreach (var chunk in _levelProvider.GetRenderableChunks())
         {
             if (chunk.FlatPrimitiveCount == 0) continue;
@@ -107,6 +112,9 @@ public class MapComponent : DrawableGameComponent
             _game.GraphicsDevice.Indices = chunk.Indices;
             _game.GraphicsDevice.SetVertexBuffer(chunk.Vertices);
             _blockFaceEffect.World = chunk.Translation;
+
+            var chunkLights = CollectLights(lights, chunk.ChunkLocation);
+            _blockFaceEffect.SetLights(chunkLights);
 
             foreach (var pass in _blockFaceEffect.CurrentTechnique.Passes)
             {
@@ -118,4 +126,42 @@ public class MapComponent : DrawableGameComponent
 
         base.Draw(gameTime);
     }
+
+    private Span<Light> CollectLights(Span<Light> buffer, Point chunkLocation)
+    {
+        if (_camera.Position.Z > 40)
+        {
+            // point-light performance isn't that great when rendering many chunks. lets just
+            // disable point-lights when you zoom out too far. this shouldn't happen in regular play.
+            return buffer[..0];
+        }
+        var minX = chunkLocation.X * LevelProvider.ChunkSize;
+        var minY = chunkLocation.Y * LevelProvider.ChunkSize;
+        var maxX = minX + LevelProvider.ChunkSize;
+        var maxY = minY + LevelProvider.ChunkSize;
+
+        // TODO: Performance is terrible. Lights should be in a quadtree for optimization.
+        var index = 0;
+        foreach (var light in _levelProvider.Map!.Lights)
+        {
+            if (!IsInRadius(minX, maxX, light.Radius, light.X) || !IsInRadius(minY, maxY, light.Radius, light.Y))
+            {
+                continue;
+            }
+
+            var point = new Vector3(light.X, light.Y, light.Z);
+            var color = new Color(light.ARGB.R, light.ARGB.G, light.ARGB.B, light.ARGB.A);
+
+            buffer[index] = new Light(point, color, light.Radius, light.Intensity / 256f);
+
+            if (++index == buffer.Length)
+            {
+                return buffer;
+            }
+        }
+
+        return buffer[..index];
+    }
+
+    private static bool IsInRadius(float min, float max, float radius, float value) => min - radius <= value && max + radius >= value;
 }

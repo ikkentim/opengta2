@@ -1,12 +1,16 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace OpenGta2.Data.Map;
 
 [StructLayout(LayoutKind.Explicit)]
+[DebuggerDisplay("{DebugDisplay}")]
 public struct Fixed16
 {
     [FieldOffset(0)]
     public short _data;
+
+    private float DebugDisplay => this;
 
     public static implicit operator float(Fixed16 value)
     {
