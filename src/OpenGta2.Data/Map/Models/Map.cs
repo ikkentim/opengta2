@@ -1,6 +1,6 @@
 ﻿namespace OpenGta2.Data.Map;
 
-public record Map(CompressedMap CompressedMap, MapObject[] Objects, MapZone[] Zones, TileAnimation[] Animations)
+public record Map(CompressedMap CompressedMap, MapObject[] Objects, MapZone[] Zones, TileAnimation[] Animations, MapLight[] Lights)
 {
     public int Width { get; } = CompressedMap.Base.GetLength(1);
     public int Height { get; } = CompressedMap.Base.GetLength(0);

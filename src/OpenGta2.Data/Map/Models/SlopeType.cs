@@ -61,8 +61,8 @@ public enum SlopeType : byte
     PartialBlockBottom,
     PartialBlockTopLeftCorner,
     PartialBlockTopRightCorner,
-    PartialBlockBottomLeftCorner,
     PartialBlockBottomRightCorner,
+    PartialBlockBottomLeftCorner,
     PartialBlockCentre,
     Reserved,
     SlopeAbove

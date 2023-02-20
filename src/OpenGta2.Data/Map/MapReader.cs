@@ -30,6 +30,7 @@ namespace OpenGta2.Data.Map
             MapObject[] objects;
             MapZone[] zones;
             TileAnimation[] animations;
+            MapLight[] lights;
 
             using (var compressedMapChunk = _riffReader.GetRequiredChunk("DMAP"))
             {
@@ -38,7 +39,7 @@ namespace OpenGta2.Data.Map
 
             using (var objectsChunk = _riffReader.GetChunk("MOBJ"))
             {
-                objects = ParseMapObjects(objectsChunk);
+                objects = ParseArray<MapObject>(objectsChunk);
             }
 
             using (var zonesChunk = _riffReader.GetChunk("ZONE"))
@@ -58,10 +59,10 @@ namespace OpenGta2.Data.Map
 
             using (var lightsChunk = _riffReader.GetChunk("LGHT"))
             {
-                // TODO
+                lights = ParseArray<MapLight>(lightsChunk);
             }
 
-            return new Map(map, objects, zones, animations);
+            return new Map(map, objects, zones, animations, lights);
         }
 
         private const int MapWidth = 256;
@@ -114,14 +115,14 @@ namespace OpenGta2.Data.Map
             return result.ToArray();
         }
 
-        private static MapObject[] ParseMapObjects(RiffChunk? chunk)
+        private static T[] ParseArray<T>(RiffChunk? chunk) where T : struct
         {
             if (chunk == null)
-                return Array.Empty<MapObject>();
+                return Array.Empty<T>();
             
-            var count = chunk.Stream.Length / Marshal.SizeOf<MapObject>();
+            var count = chunk.Stream.Length / Marshal.SizeOf<T>();
 
-            var result = new MapObject[count];
+            var result = new T[count];
             chunk.Stream.ReadExact(result.AsSpan());
 
             return result;
@@ -150,16 +151,11 @@ namespace OpenGta2.Data.Map
             // }
 
             // read base
+
             var @base = new uint[MapHeight, MapWidth];
             var baseSpan = MemoryMarshal.CreateSpan(ref Unsafe.As<byte, uint>(ref MemoryMarshal.GetArrayDataReference(@base)), @base.Length);
             stream.ReadExact(baseSpan);
-
-            // for(var y = 0; y <MapHeight;y++)
-            // for (var x = 0; x < MapWidth; x++)
-            // {
-            //     @base[y, x] = stream.ReadExactDoubleWord();
-            // }
-
+            
             // read columns
             var columnDoubleWords = stream.ReadExactDoubleWord();
             var columnsStart = stream.Position;

@@ -37,7 +37,11 @@ VertexShaderOutput MainVS(const in VertexShaderInput input)
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float4 color = Tiles.Sample(TilesSampler, input.TexCoord);
-    clip(color.a - 0.05);
+
+    if(Flat) {
+        clip(color.a - 0.05);
+    }
+
     return color;
 }
 
