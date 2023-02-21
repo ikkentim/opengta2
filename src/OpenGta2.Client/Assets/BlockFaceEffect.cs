@@ -17,6 +17,8 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     private readonly EffectParameter _lightRadiiParam;
     private readonly EffectParameter _lightIntensitiesParam;
     private readonly EffectParameter _lightCountParam;
+    private readonly EffectParameter _ambientLevelParam;
+    private readonly EffectParameter _shadingLevelParam;
 
     private DirtyFlags _dirtyFlags;
     
@@ -25,13 +27,15 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     private Matrix _view;
     private Matrix _world;
     private Texture2D? _tiles;
+    private float _ambientLevel = 0.3f;
+    private float _shadingLevel = 15;
 
     private readonly Vector3[] _lightPositions = new Vector3[MaxLights];
     private readonly Vector4[] _lightColors = new Vector4[MaxLights];
     private readonly float[] _lightRadii = new float[MaxLights];
     private readonly float[] _lightIntensities = new float[MaxLights];
     private int _lightCount;
-
+    
     public BlockFaceEffect(Effect cloneSource) : base(cloneSource)
     {
         _worldViewProjectionParam = Parameters["WorldViewProjection"];
@@ -43,6 +47,8 @@ public class BlockFaceEffect : Effect, IEffectMatrices
         _lightRadiiParam = Parameters["LightRadii"];
         _lightIntensitiesParam = Parameters["LightIntensities"];
         _lightCountParam = Parameters["LightCount"];
+        _ambientLevelParam = Parameters["AmbientLevel"];
+        _shadingLevelParam = Parameters["ShadingLevel"];
     }
 
     public Matrix Projection
@@ -73,6 +79,24 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     {
         get => _flat;
         set => Set(ref _flat, value, DirtyFlags.Flat);
+    }
+
+   /// <summary>
+   /// Ambient light level. 0.0 is black, 1.0 is ‘normal’ GTA without light. 0.3 is 'noon' on Industrial map.
+   /// </summary>
+    public float AmbientLevel
+    {
+        get => _ambientLevel;
+        set => Set(ref _ambientLevel, value, DirtyFlags.AmbientLevel);
+    }
+
+   /// <summary>
+   /// Similar to the AmbientLevel, this sets the shading 'contrast' for the level. Valid values are 0 – 31, with 15 being the 'normal' level.
+   /// </summary>
+    public float ShadingLevel
+    {
+        get => _shadingLevel;
+        set => Set(ref _shadingLevel, value, DirtyFlags.ShadingLevel);
     }
 
     public void SetLights(Span<Light> lights)
@@ -112,6 +136,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
         {
             _worldViewProjectionParam.SetValue(World * View * Projection);
         }
+
         if ((_dirtyFlags & DirtyFlags.World) != 0)
         {
             _worldParam.SetValue(World);
@@ -140,6 +165,16 @@ public class BlockFaceEffect : Effect, IEffectMatrices
             _lightCountParam.SetValue(_lightCount);
         }
 
+        if ((_dirtyFlags & DirtyFlags.AmbientLevel) != 0)
+        {
+            _ambientLevelParam.SetValue(_ambientLevel);
+        }
+
+        if ((_dirtyFlags & DirtyFlags.ShadingLevel) != 0)
+        {
+            _shadingLevelParam.SetValue(_shadingLevel);
+        }
+
         _dirtyFlags = DirtyFlags.None;
 
         base.OnApply();
@@ -156,6 +191,8 @@ public class BlockFaceEffect : Effect, IEffectMatrices
         Flat = 4,
         Lights = 8,
         LightCount = 16,
-        World = 32
+        World = 32,
+        AmbientLevel = 64,
+        ShadingLevel = 128
     }
 }

@@ -9,7 +9,6 @@
 
 #define MAX_LIGHTS 6
 
-
 matrix World;
 matrix WorldViewProjection;
 
@@ -24,10 +23,14 @@ float LightRadii[MAX_LIGHTS];
 float LightIntensities[MAX_LIGHTS];
 int LightCount = 0;
 
+float AmbientLevel = 0.3;
+float ShadingLevel = 15;
+
 struct VertexShaderInput
 {
 	float4 Position : POSITION0;
     float3 TexCoord : TEXCOORD0;
+    float Shading : COLOR0;
 };
 
 struct VertexShaderOutput
@@ -35,6 +38,7 @@ struct VertexShaderOutput
     float4 Position : SV_POSITION;
     float3 TexCoord : TEXCOORD0;
     float3 WorldPosition : TEXCOORD1;
+    float Shading : COLOR0;
 };
 
 VertexShaderOutput MainVS(const in VertexShaderInput input)
@@ -43,6 +47,7 @@ VertexShaderOutput MainVS(const in VertexShaderInput input)
     output.Position = mul(input.Position, WorldViewProjection);
     output.TexCoord = input.TexCoord;
     output.WorldPosition = mul(input.Position, World);
+    output.Shading = input.Shading;
     return output;
 }
 
@@ -67,15 +72,19 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float4 color = Tiles.Sample(TilesSampler, input.TexCoord);
 
+    // apply transparency in flat pass
     if (Flat)
     {
+        // clip transparent pixels as not to fill depth buffer
         clip(color.a - 0.05);
     }
+    
+    // apply shading
+    const float brightness = 1 - input.Shading * (ShadingLevel / 31.0);
+    color = float4(color.rgb * brightness, color.a);
 
-    // 0.3 is ambient level proved by mapscript
-    // TODO: ambient level should be provided to shader
-    float4 lightTotal = float4(0.3, 0.3, 0.3, 1);
-
+    // compute lighting
+    float4 lightTotal = float4(AmbientLevel, AmbientLevel, AmbientLevel, 1);
     for (int i = 0; i < LightCount; i++)
     {
         lightTotal += CalcPointLight(i, input.WorldPosition);
