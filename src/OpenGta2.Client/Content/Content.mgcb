@@ -19,3 +19,9 @@
 /processorParam:DebugMode=Auto
 /build:BlockFaceEffect.fx
 
+#begin SpriteEffect.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:SpriteEffect.fx
+

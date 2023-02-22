@@ -26,7 +26,11 @@ namespace OpenGta2.GameData.Style
             var physPalette = ReadPhysicalPalettes();
             var tiles = ReadTiles();
 
-            return new Style(paletteBase, paletteIndex, physPalette, tiles);
+            var spriteGraphics = ReadSpriteGraphics();
+            var spriteBases = ReadSpriteBases();
+            var spriteIndex = ReadSpriteIndex();
+
+            return new Style(paletteBase, paletteIndex, physPalette, tiles, spriteGraphics, spriteBases, spriteIndex);
         }
 
         private PaletteBase ReadPaletteBase()
@@ -39,7 +43,7 @@ namespace OpenGta2.GameData.Style
         private PaletteIndex ReadPaletteIndex()
         {
             using var chunk = _riffReader.GetRequiredChunk("PALX", PaletteIndex.PhysPaletteLength * 2);
-            
+
             var physPalette = new ushort[PaletteIndex.PhysPaletteLength];
             chunk.Stream.ReadExact(physPalette.AsSpan());
 
@@ -49,22 +53,61 @@ namespace OpenGta2.GameData.Style
         private PhysicalPalette ReadPhysicalPalettes()
         {
             var chunk = _riffReader.GetRequiredChunk("PPAL");
-            
+
             var paletteSize = chunk.Stream.Length / Marshal.SizeOf<uint>();
             var palette = new BgraColor[paletteSize];
             chunk.Stream.ReadExact(palette.AsSpan());
 
             return new PhysicalPalette(palette);
         }
-        
+
         private Tiles ReadTiles()
         {
             using var chunk = _riffReader.GetRequiredChunk("TILE");
-            
+
             var data = new byte[chunk.Stream.Length];
             chunk.Stream.ReadExact(data);
 
             return new Tiles(data);
+        }
+
+        private SpritePage[] ReadSpriteGraphics()
+        {
+            using var chunk = _riffReader.GetRequiredChunk("SPRG");
+
+            const int PageSize = 256 * 256;
+
+            var pageCount = chunk.Stream.Length / PageSize;
+            
+            var pages = new SpritePage[pageCount];
+
+            for (var page = 0; page < pageCount; page++)
+            {
+                var data = new byte[PageSize];
+                chunk.Stream.ReadExact(data.AsSpan());
+                pages[page] = new SpritePage(data);
+            }
+
+            return pages;
+        }
+
+        private SpriteEntry[] ReadSpriteIndex()
+        {
+            using var chunk = _riffReader.GetRequiredChunk("SPRX");
+
+            var spriteCount = chunk.Stream.Length / Marshal.SizeOf<SpriteEntry>();
+
+            var result = new SpriteEntry[spriteCount];
+            chunk.Stream.ReadExact(result.AsSpan());
+
+            return result;
+        }
+
+        private SpriteBase ReadSpriteBases()
+        {
+            using var chunk = _riffReader.GetRequiredChunk("SPRB", Marshal.SizeOf<SpriteBase>());
+            chunk.Stream.ReadExact(out SpriteBase result);
+            return result;
         }
     }
 }

@@ -39,13 +39,13 @@ public class LevelProvider
     public Map Map => _map ?? throw ThrowHelper.GetLevelNotLoaded();
 
 
-    public Style? Style => _style ?? throw ThrowHelper.GetLevelNotLoaded();
+    public Style Style => _style ?? throw ThrowHelper.GetLevelNotLoaded();
 
 
-    public StyleTextureSet? Textures => _textures ?? throw ThrowHelper.GetLevelNotLoaded();
+    public StyleTextureSet Textures => _textures ?? throw ThrowHelper.GetLevelNotLoaded();
 
 
-    public bool IsMapLoaded => _map != null && Style != null && _textures != null;
+    public bool IsMapLoaded => _map != null && _style != null && _textures != null;
 
     public void LoadLevel(string mapFile, string styleFile)
     {

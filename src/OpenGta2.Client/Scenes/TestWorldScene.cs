@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Input;
 using OpenGta2.Client.Components;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Utilities;
+using OpenGta2.GameData.Style;
 
 namespace OpenGta2.Client.Scenes;
 
@@ -14,7 +15,7 @@ public class TestWorldScene : Scene
     }
 
     public Camera Camera { get; }
-
+    
     public override void Update(GameTime gameTime)
     {
         UpdateCamera(gameTime);
@@ -57,5 +58,7 @@ public class TestWorldScene : Scene
     public override void Initialize()
     {
         Game.Components.Add(new MapComponent(Game, Camera));
+        Game.Components.Add(new SpriteTestComponent(Game));
+
     }
 }

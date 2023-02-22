@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Client.Content;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Rendering;
+using OpenGta2.Client.Rendering.Effects;
 
 namespace OpenGta2.Client.Components;
 

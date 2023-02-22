@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace OpenGta2.Client.Rendering;
+namespace OpenGta2.Client.Rendering.Effects;
 
 public class BlockFaceEffect : Effect, IEffectMatrices
 {
@@ -20,7 +20,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     private readonly EffectParameter _shadingLevelParam;
 
     private DirtyFlags _dirtyFlags;
-    
+
     private Matrix _projection;
     private Matrix _view;
     private Matrix _world;
@@ -71,7 +71,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
         get => _tiles;
         set => Set(ref _tiles, value, DirtyFlags.Tiles);
     }
-    
+
     /// <summary>
     /// Ambient light level. 0.0 is black, 1.0 is ‘normal’ GTA without light. 0.3 is 'noon' on Industrial map.
     /// </summary>
@@ -113,9 +113,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     private void Set<T>(ref T field, T value, DirtyFlags flag)
     {
         if (field?.Equals(value) ?? false)
-        {
             return;
-        }
 
         field = value;
         _dirtyFlags |= flag;
@@ -124,20 +122,14 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     protected override void OnApply()
     {
         if ((_dirtyFlags & DirtyFlags.WorldViewProjection) != 0)
-        {
             _worldViewProjectionParam.SetValue(World * View * Projection);
-        }
 
         if ((_dirtyFlags & DirtyFlags.World) != 0)
-        {
             _worldParam.SetValue(World);
-        }
 
         if ((_dirtyFlags & DirtyFlags.Tiles) != 0)
-        {
             _tilesParam.SetValue(_tiles);
-        }
-        
+
         if ((_dirtyFlags & DirtyFlags.Lights) != 0)
         {
             _lightPositionsParam.SetValue(_lightPositions);
@@ -147,19 +139,13 @@ public class BlockFaceEffect : Effect, IEffectMatrices
         }
 
         if ((_dirtyFlags & DirtyFlags.LightCount) != 0)
-        {
             _lightCountParam.SetValue(_lightCount);
-        }
 
         if ((_dirtyFlags & DirtyFlags.AmbientLevel) != 0)
-        {
             _ambientLevelParam.SetValue(_ambientLevel);
-        }
 
         if ((_dirtyFlags & DirtyFlags.ShadingLevel) != 0)
-        {
             _shadingLevelParam.SetValue(_shadingLevel);
-        }
 
         _dirtyFlags = DirtyFlags.None;
 
