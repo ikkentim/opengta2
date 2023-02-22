@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Client.Content;
+using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Rendering;
 using OpenGta2.Client.Rendering.Effects;
@@ -44,6 +45,7 @@ public class MapComponent : DrawableGameComponent
         _blockFaceEffect!.View = _camera.ViewMatrix;
         _blockFaceEffect.Projection = _camera.Projection;
 
+        PerformanceCounters.Drawing.StartMeasurement("DrawOpaque");
         foreach (var chunk in _levelProvider.GetRenderableChunks())
         {
             if (chunk.OpaquePrimitiveCount == 0) continue;
@@ -54,7 +56,11 @@ public class MapComponent : DrawableGameComponent
             _blockFaceEffect.CurrentTechnique.Passes["Opaque"].Apply();
             _game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.OpaquePrimitiveCount);
         }
+
+        PerformanceCounters.Drawing.StopMeasurement();
         
+        PerformanceCounters.Drawing.StartMeasurement("DrawFlat");
+
         foreach (var chunk in _levelProvider.GetRenderableChunks())
         {
             if (chunk.FlatPrimitiveCount == 0) continue;
@@ -65,6 +71,8 @@ public class MapComponent : DrawableGameComponent
             _blockFaceEffect.CurrentTechnique.Passes["Flat"].Apply();
             _game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, chunk.FlatIndexOffset, chunk.FlatPrimitiveCount);
         }
+        
+        PerformanceCounters.Drawing.StopMeasurement();
 
 
         base.Draw(gameTime);
@@ -80,8 +88,14 @@ public class MapComponent : DrawableGameComponent
 
     private Span<Light> CollectLights(Span<Light> buffer, Point chunkLocation)
     {
+        PerformanceCounters.Drawing.StartMeasurement("CollectLights");
+
         // point-light performance isn't that great when rendering many chunks. lets just
         // disable point-lights when you zoom out too far. this shouldn't happen in regular play.
-        return _camera.Position.Z > 40 ? buffer[..0] : _levelProvider.CollectLights(buffer, chunkLocation);
+        var result = _camera.Position.Z > 40 ? buffer[..0] : _levelProvider.CollectLights(buffer, chunkLocation);
+
+        PerformanceCounters.Drawing.StopMeasurement();
+
+        return result;
     }
 }

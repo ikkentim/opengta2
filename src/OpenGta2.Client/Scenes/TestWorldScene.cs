@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using OpenGta2.Client.Components;
+using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Utilities;
 using OpenGta2.GameData.Style;
@@ -59,6 +60,7 @@ public class TestWorldScene : Scene
     {
         Game.Components.Add(new MapComponent(Game, Camera));
         Game.Components.Add(new SpriteTestComponent(Game));
+        Game.Components.Add(new DebuggingDrawingComponent(Game));
 
     }
 }

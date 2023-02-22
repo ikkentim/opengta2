@@ -19,6 +19,13 @@
 /processorParam:DebugMode=Auto
 /build:BlockFaceEffect.fx
 
+#begin DebugFont.spritefont
+/importer:FontDescriptionImporter
+/processor:LocalizedFontProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:DebugFont.spritefont
+
 #begin SpriteEffect.fx
 /importer:EffectImporter
 /processor:EffectProcessor

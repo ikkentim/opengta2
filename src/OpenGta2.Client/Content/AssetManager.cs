@@ -10,11 +10,13 @@ public sealed class AssetManager : IDisposable
 {
     private BlockFaceEffect? _blockFaceEffect;
     private SpriteEffect? _spriteEffect;
+    private SpriteFont? _debugFont;
 
     public void LoadContent(ContentManager contentManager)
     {
         _blockFaceEffect = new BlockFaceEffect(contentManager.Load<Effect>("BlockFaceEffect"));
         _spriteEffect = new SpriteEffect(contentManager.Load<Effect>("SpriteEffect"));
+        _debugFont = contentManager.Load<SpriteFont>("DebugFont");
     }
     
     public BlockFaceEffect CreateBlockFaceEffect()
@@ -26,6 +28,8 @@ public sealed class AssetManager : IDisposable
     {
         return (SpriteEffect)_spriteEffect!.Clone();
     }
+
+    public SpriteFont GetDebugFont() => _debugFont!;
 
     public void Dispose()
     {
