@@ -29,20 +29,32 @@ public static class QuadRenderer
 
     public static void Render(GraphicsDevice device, float texture, Vector2 v1, Vector2 v2)
     {
+        Render(device, texture, v1, v2, Vector2.Zero, Vector2.One);
+    }
+    public static void Render(GraphicsDevice device, float texture, Vector2 v1, Vector2 v2, Vector2 u1, Vector2 u2)
+    {
         _verts[0].Position.X = v1.X;
         _verts[0].Position.Y = v1.Y;
+        _verts[0].TextureCoordinate.X = u1.X;
+        _verts[0].TextureCoordinate.Y = u1.Y;
         _verts[0].TextureCoordinate.Z = texture;
 
         _verts[1].Position.X = v2.X;
         _verts[1].Position.Y = v1.Y;
+        _verts[1].TextureCoordinate.X = u2.X;
+        _verts[1].TextureCoordinate.Y = u1.Y;
         _verts[1].TextureCoordinate.Z = texture;
 
         _verts[2].Position.X = v1.X;
         _verts[2].Position.Y = v2.Y;
+        _verts[2].TextureCoordinate.X = u1.X;
+        _verts[2].TextureCoordinate.Y = u2.Y;
         _verts[2].TextureCoordinate.Z = texture;
 
         _verts[3].Position.X = v2.X;
         _verts[3].Position.Y = v2.Y;
+        _verts[3].TextureCoordinate.X = u2.X;
+        _verts[3].TextureCoordinate.Y = u2.Y;
         _verts[3].TextureCoordinate.Z = texture;
 
 

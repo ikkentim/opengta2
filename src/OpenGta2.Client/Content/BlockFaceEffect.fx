@@ -7,7 +7,7 @@
 	#define PS_SHADERMODEL ps_4_0
 #endif
 
-#define MAX_LIGHTS 6
+#define MAX_LIGHTS 16
 
 matrix World;
 matrix WorldViewProjection;

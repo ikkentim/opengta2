@@ -30,7 +30,9 @@ namespace OpenGta2.GameData.Style
             var spriteBases = ReadSpriteBases();
             var spriteIndex = ReadSpriteIndex();
 
-            return new Style(paletteBase, paletteIndex, physPalette, tiles, spriteGraphics, spriteBases, spriteIndex);
+            var fontBase = ReadFontBase();
+
+            return new Style(paletteBase, paletteIndex, physPalette, tiles, spriteGraphics, spriteBases, spriteIndex, fontBase);
         }
 
         private PaletteBase ReadPaletteBase()
@@ -61,6 +63,17 @@ namespace OpenGta2.GameData.Style
             return new PhysicalPalette(palette);
         }
 
+        private FontBase ReadFontBase()
+        {
+            using var chunk = _riffReader.GetRequiredChunk("FONB");
+
+            var count = chunk.Stream.ReadExactWord();
+
+            var data = new ushort[count];
+            chunk.Stream.ReadExact(data.AsSpan());
+
+            return new FontBase(data);
+        }
         private Tiles ReadTiles()
         {
             using var chunk = _riffReader.GetRequiredChunk("TILE");

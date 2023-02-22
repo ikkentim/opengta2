@@ -50,5 +50,3 @@ public readonly struct Tiles
         return page[start..(start + TileWidth)];
     }
 }
-
-public record struct SpritePage(byte[] Data);

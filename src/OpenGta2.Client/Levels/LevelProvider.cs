@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,7 +15,7 @@ namespace OpenGta2.Client.Levels;
 
 public class LevelProvider
 {
-    public const int ChunkSize = 4;
+    public const int ChunkSize = 8;
     private readonly Vector3[] _cameraCornersBuffer = new Vector3[8];
     private readonly Dictionary<Point, RenderableMapChunk> _chunks = new();
     private readonly BufferArray<(float drawOrder, short index)> _flatIndices = new();
@@ -209,6 +210,11 @@ public class LevelProvider
         var index = 0;
         foreach (var light in Map.Lights)
         {
+            if (index == buffer.Length)
+            {
+                Debug.WriteLine($"Hit lights limit {buffer.Length} at chunk {chunkLocation}");
+                return buffer; // hit limit of lights for this chunk
+            }
             if (!IsInRadius(minX, maxX, light.Radius, light.X) || !IsInRadius(minY, maxY, light.Radius, light.Y))
                 continue;
 
@@ -217,8 +223,7 @@ public class LevelProvider
 
             buffer[index] = new Light(point, color, light.Radius, light.Intensity / 256f);
 
-            if (++index == buffer.Length)
-                return buffer; // hit limit of lights for this chunk
+            index++;
         }
 
         return buffer[..index];

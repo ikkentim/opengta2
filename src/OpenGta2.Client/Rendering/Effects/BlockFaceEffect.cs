@@ -6,7 +6,7 @@ namespace OpenGta2.Client.Rendering.Effects;
 
 public class BlockFaceEffect : Effect, IEffectMatrices
 {
-    public const int MaxLights = 6;
+    public const int MaxLights = 16;
 
     private readonly EffectParameter _worldViewProjectionParam;
     private readonly EffectParameter _worldParam;
@@ -73,7 +73,7 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     }
 
     /// <summary>
-    /// Ambient light level. 0.0 is black, 1.0 is ‘normal’ GTA without light. 0.3 is 'noon' on Industrial map.
+    /// Ambient light level. 0.0 is black, 1.0 is ‘normal’ GTA without light. 0.3 is 'dusk' on Industrial map.
     /// </summary>
     public float AmbientLevel
     {
