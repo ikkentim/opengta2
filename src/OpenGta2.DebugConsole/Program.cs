@@ -1,8 +1,5 @@
-﻿using OpenGta2.Data;
-using OpenGta2.Data.Map;
-using OpenGta2.Data.Riff;
-using OpenGta2.Data.Scripts;
-using OpenGta2.Data.Scripts.Interpreting;
+﻿using OpenGta2.GameData.Map;
+using OpenGta2.GameData.Riff;
 
 /*
 using var stream = TestGamePath.OpenFile("data/Industrial-2P.scr");

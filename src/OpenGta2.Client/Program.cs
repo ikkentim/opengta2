@@ -1,2 +1,4 @@
-﻿using var game = new OpenGta2.Client.GtaGame();
+﻿using OpenGta2.Client;
+
+using var game = new GtaGame();
 game.Run();

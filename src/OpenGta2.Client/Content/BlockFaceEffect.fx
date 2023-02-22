@@ -15,8 +15,6 @@ matrix WorldViewProjection;
 Texture2DArray Tiles : register(t0);
 sampler TilesSampler : register(s0);
 
-bool Flat;
-
 float3 LightPositions[MAX_LIGHTS];
 float4 LightColors[MAX_LIGHTS];
 float LightRadii[MAX_LIGHTS];
@@ -41,6 +39,23 @@ struct VertexShaderOutput
     float Shading : COLOR0;
 };
 
+float4 CalcPointLight(int index, const in float3 worldPos)
+{
+    const float3 lightDirection = worldPos - LightPositions[index];
+    const float distance = length(lightDirection);
+
+    if (distance > LightRadii[index])
+    {
+        return float4(0, 0, 0, 0);
+    }
+
+    const float intensity = LightIntensities[index];
+    const float distanceFactor = 1 - distance / LightRadii[index];
+    const float attenuation = intensity * distanceFactor; // linear attenuation
+
+    return LightColors[index] * attenuation;
+}
+
 VertexShaderOutput MainVS(const in VertexShaderInput input)
 {
     VertexShaderOutput output;
@@ -51,29 +66,12 @@ VertexShaderOutput MainVS(const in VertexShaderInput input)
     return output;
 }
 
-float4 CalcPointLight(int index, float3 worldPos)
-{
-    float3 lightDirection = worldPos - LightPositions[index];
-    const float distance = length(lightDirection);
-
-    if (distance > LightRadii[index])
-    {
-        return float4(0, 0, 0, 0);
-    }
-
-    const float intensity = LightIntensities[index];
-    const float distanceFactor = 1 - distance / LightRadii[index];
-    const float attenuation = intensity * distanceFactor;// linear attenuation
-
-    return LightColors[index] * attenuation;
-}
-
-float4 MainPS(VertexShaderOutput input) : COLOR
+float4 MainPS(const in VertexShaderOutput input, bool flatPass) : COLOR
 {
     float4 color = Tiles.Sample(TilesSampler, input.TexCoord);
 
     // apply transparency in flat pass
-    if (Flat)
+    if (flatPass)
     {
         // clip transparent pixels as not to fill depth buffer
         clip(color.a - 0.05);
@@ -93,12 +91,27 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     return color * lightTotal;
 }
 
+float4 OpaquePS(const in VertexShaderOutput input) : COLOR
+{
+    return MainPS(input, false);
+}
+
+float4 FlatPS(const in VertexShaderOutput input) : COLOR
+{
+    return MainPS(input, true);
+}
+
 technique Faces
 {
-    pass P0
+    pass Opaque
+    {
+        VertexShader = compile VS_SHADERMODEL MainVS();
+        PixelShader = compile PS_SHADERMODEL OpaquePS();
+    }
+    pass Flat
     {
         AlphaBlendEnable = TRUE;
         VertexShader = compile VS_SHADERMODEL MainVS();
-        PixelShader = compile PS_SHADERMODEL MainPS();
+        PixelShader = compile PS_SHADERMODEL FlatPS();
     }
 };

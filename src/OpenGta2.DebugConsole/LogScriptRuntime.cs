@@ -1,7 +1,6 @@
-﻿using OpenGta2.Data.Scripts;
-using OpenGta2.Data.Scripts.CommandParameters;
-using OpenGta2.Data.Scripts.Interpreting;
-using OpenGta2.DebugConsole;
+﻿using OpenGta2.DebugConsole;
+using OpenGta2.GameData.Scripts.CommandParameters;
+using OpenGta2.GameData.Scripts.Interpreting;
 
 public class LogScriptRuntime : IScriptRuntime
 {

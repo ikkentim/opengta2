@@ -1,13 +1,19 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using OpenGta2.Client.Content;
+using OpenGta2.Client.Scenes;
+using OpenGta2.Client.Utilities;
 
 namespace OpenGta2.Client;
 
 public class GtaGame : Game
 {
     private readonly GraphicsDeviceManager _graphics;
-    private Scene? _activeScene;
+    private AssetManager? _assetManager;
+
+    private bool _hasReceivedUpdate;
 
     public GtaGame()
     {
@@ -22,6 +28,10 @@ public class GtaGame : Game
         _graphics.PreferredBackBufferHeight = 1080;
         _graphics.ApplyChanges();
     }
+
+    public AssetManager AssetManager => _assetManager ?? throw ThrowHelper.GetContentNotLoaded();
+
+    public Scene? ActiveScene { get; private set; }
 
     private void Graphics_PreparingDeviceSettings(object? sender, PreparingDeviceSettingsEventArgs e)
     {
@@ -48,30 +58,26 @@ public class GtaGame : Game
 
     protected override void LoadContent()
     {
-        var assetManager = new AssetManager();
-        assetManager.LoadContent(Content);
+        _assetManager = new AssetManager();
+        _assetManager.LoadContent(Content);
 
-        Services.AddService(assetManager);
+        Services.AddService(_assetManager);
 
         base.LoadContent();
     }
 
     public void ActivateScene(Scene scene)
     {
-        // Components.Clear();
-        // TODO: maybe should dispose all active components?
-
-        if (_activeScene != null)
+        foreach (var component in Components)
         {
-            _activeScene.Dispose();
-            Components.Remove(_activeScene);
+            if (component is IDisposable disposable) disposable.Dispose();
         }
-        
-        Components.Add(scene);
-        _activeScene = scene;
-    }
 
-    private bool _hasReceivedUpdate;
+        Components.Clear();
+
+        Components.Add(scene);
+        ActiveScene = scene;
+    }
 
     protected override void Update(GameTime gameTime)
     {
@@ -81,16 +87,17 @@ public class GtaGame : Game
             FirstUpdate();
         }
 
-        if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+        if (Keyboard.GetState()
+            .IsKeyDown(Keys.Escape))
             Exit();
-        
+
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
-        
+
         base.Draw(gameTime);
     }
 }
