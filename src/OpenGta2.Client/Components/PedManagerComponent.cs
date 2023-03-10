@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -79,36 +82,54 @@ public class PedManagerComponent : DrawableGameComponent
     public override void Update(GameTime gameTime)
     {
         var kb = Keyboard.GetState();
-        var testPedInput = Vector3.Zero;
+        var fd = 0f;
+        var lr = 0f;
+
 
         if (kb.IsKeyDown(Keys.Right))
-            testPedInput += GtaVector.Right;
+            lr++;
 
         if (kb.IsKeyDown(Keys.Left))
-            testPedInput += GtaVector.Left;
+            lr--;
 
         if (kb.IsKeyDown(Keys.Up))
-            testPedInput += GtaVector.Up;
+            fd++;
 
         if (kb.IsKeyDown(Keys.Down))
-            testPedInput += GtaVector.Down;
+            fd--;
 
-        foreach (var ped in Peds)
+        if (Peds.Count > 0)
         {
-            ped.Position += testPedInput * gameTime.GetDelta();
+            var player = Peds[0];
+
+            player.Rotation += lr * MathHelper.TwoPi * gameTime.GetDelta();
+            
+            var heading = new Vector2(MathF.Sin(-player.Rotation), MathF.Cos(-player.Rotation));
+            player.Position += new Vector3(heading * fd * gameTime.GetDelta(), 0) * 2;
+
+            _camera.Position = player.Position + GtaVector.Skywards * 5;
+
+            player.Animation = fd != 0 ? PedAnimation.Walking  : PedAnimation.Idle;
         }
         
         if (kb.IsKeyDown(Keys.OemPlus) && !_lastState.IsKeyDown(Keys.OemPlus))
         {
             _pedAnimNum++;
+            _pedAnimOveride = true;
         }
 
         if (kb.IsKeyDown(Keys.OemMinus) && !_lastState.IsKeyDown(Keys.OemMinus))
         {
             _pedAnimNum--;
+            _pedAnimOveride = true;
+        }
+        
+        foreach (var ped in Peds)
+        {
+            ped.UpdateAnimation(gameTime.GetDelta());
         }
 
-        DiagnosticValues.Values["PedAnim"] = _pedAnimNum.ToString();
+        DiagnosticValues.Values["PedAnim"] = _pedAnimNum.ToString(CultureInfo.InvariantCulture);
 
         _lastState = kb;
 
@@ -116,6 +137,7 @@ public class PedManagerComponent : DrawableGameComponent
         base.Update(gameTime);
     }
 
+    private bool _pedAnimOveride = false;
     private int _pedAnimNum = 53;
 
     public override void Draw(GameTime gameTime)
@@ -125,6 +147,11 @@ public class PedManagerComponent : DrawableGameComponent
 
         foreach (var ped in Peds)
         {
+            if (!_pedAnimOveride)
+            {
+                _pedAnimNum = ped.AnimationFrame + ped.AnimationBase;
+            }
+
             _spriteEfect!.Texture = _levelProvider.Textures.GetSpriteTexture(SpriteKind.Ped, (ushort)(158 + _pedAnimNum), ped.Remap);
             
             var world = Matrix.CreateScale(_spriteEfect!.Texture.Width / 64f, _spriteEfect!.Texture.Height / 64f, 1)  * Matrix.CreateRotationZ(ped.Rotation) * Matrix.CreateTranslation(ped.Position); 
