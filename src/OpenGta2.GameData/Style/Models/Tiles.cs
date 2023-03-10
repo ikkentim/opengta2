@@ -2,21 +2,6 @@
 
 public readonly struct Tiles
 {
-    // Tiles are stored in pages. Each page contains 4x4 tiles, each tile contains 64x64 pixels of 256-colors data.
-    public const int TileWidth = 64;
-    public const int TileHeight = 64;
-    public const int TilePageCount = 92;
-
-    public const int TilesPerPageX = 4;
-    public const int TilesPerPageY = 4;
-    public const int TilesPerPage = TilesPerPageX * TilesPerPageY;
-
-    public const int TilePageWidth = TilesPerPageX * TileWidth;
-    public const int TilePageHeight = TilesPerPageY * TileHeight;
-
-    private const int TileLength = TileWidth * TileHeight;
-    private const int TilePageLength = TilePageWidth * TilePageHeight;
-
     private readonly byte[] _data;
 
     public Tiles(byte[] data)
@@ -24,29 +9,25 @@ public readonly struct Tiles
         _data = data;
     }
 
-    public int Count => _data.Length / TileLength;
+    public int TileCount => _data.Length / Tile.Size;
 
-    public Span<byte> GetTileSlice(ushort number, int y)
+    public int PageCount => _data.Length / TilesPage.Size;
+
+    public TilesPage GetPage(int index)
     {
-        if (number >= Count)
-        {
-            throw new ArgumentOutOfRangeException(nameof(number));
-        }
+        if (index < 0 || index >= PageCount) throw new ArgumentOutOfRangeException(nameof(index));
 
-        var pageIndex = number / TilesPerPage;
+        var page = _data.AsSpan(index * TilesPage.Size, TilesPage.Size);
+        return new TilesPage(page);
+    }
 
-        var page = _data.AsSpan(pageIndex * TilePageLength, TilePageLength);
+    public Tile GetTile(int index)
+    {
+        if (index < 0 || index >= TileCount) throw new ArgumentOutOfRangeException(nameof(index));
 
-        var tileIndex = number - pageIndex * TilesPerPage;
-        var tileRow = tileIndex / TilesPerPageX;
-        var tileCol = tileIndex % TilesPerPageX;
+        var page = index / TilesPage.TilesPerPage;
+        var indexOnPage = index - page * TilesPage.TilesPerPage;
 
-
-        var pageY = tileRow * TileHeight + y;
-        var pageX = tileCol * TileWidth;
-
-        var start = pageY * TilePageWidth + pageX;
-
-        return page[start..(start + TileWidth)];
+        return GetPage(page).GetTile(indexOnPage);
     }
 }

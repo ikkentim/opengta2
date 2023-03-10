@@ -23,4 +23,31 @@ public struct PaletteBase
     public int MapObjRemapOffset => CodeObjRemapOffset + CodeObjRemap;
     public int UserRemapOffset => MapObjRemapOffset + MapObjRemap;
     public int FontRemapOffset => UserRemapOffset + UserRemap;
+
+    public int GetRemap(SpriteKind kind)
+    {
+        return kind switch
+        {
+            SpriteKind.Car => CarRemap,
+            SpriteKind.Ped => PedRemap,
+            SpriteKind.CodeObj => CodeObjRemap,
+            SpriteKind.mapObj => MapObjRemap,
+            SpriteKind.User => UserRemap,
+            SpriteKind.Font => FontRemap,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+        };
+    }
+    public int GetRemapOffset(SpriteKind kind)
+    {
+        return kind switch
+        {
+            SpriteKind.Car => CarRemapOffset,
+            SpriteKind.Ped => PedRemapOffset,
+            SpriteKind.CodeObj => CodeObjRemapOffset,
+            SpriteKind.mapObj => MapObjRemapOffset,
+            SpriteKind.User => UserRemapOffset,
+            SpriteKind.Font => FontRemapOffset,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+        };
+    }
 }

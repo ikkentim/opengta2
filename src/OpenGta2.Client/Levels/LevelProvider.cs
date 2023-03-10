@@ -215,6 +215,7 @@ public class LevelProvider
                 Debug.WriteLine($"Hit lights limit {buffer.Length} at chunk {chunkLocation}");
                 return buffer; // hit limit of lights for this chunk
             }
+            
             if (!IsInRadius(minX, maxX, light.Radius, light.X) || !IsInRadius(minY, maxY, light.Radius, light.Y))
                 continue;
 

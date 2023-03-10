@@ -9,19 +9,24 @@
 
 matrix MatrixTransform;
 
-Texture2DArray Sprites : register(t0);
-sampler SpritesSampler : register(s0);
+Texture2D Sprites : register(t0);
+sampler SpritesSampler : register(s0) = sampler_state
+{
+    Texture = <Sprites>;
+    AddressU = clamp;
+    AddressV = clamp;
+};
 
 struct VertexShaderInput
 {
     float4 Position : POSITION0;
-    float3 TexCoord : TEXCOORD0;
+    float2 TexCoord : TEXCOORD0;
 };
 
 struct VertexShaderOutput
 {
     float4 Position : SV_POSITION;
-    float3 TexCoord : TEXCOORD0;
+    float2 TexCoord : TEXCOORD0;
 };
 
 VertexShaderOutput MainVS(const in VertexShaderInput input)

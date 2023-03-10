@@ -21,9 +21,14 @@ public class GtaGame : Game
         IsMouseVisible = true;
 
         _graphics = new GraphicsDeviceManager(this);
-        _graphics.PreparingDeviceSettings += Graphics_PreparingDeviceSettings;
         _graphics.GraphicsProfile = GraphicsProfile.HiDef;
+        _graphics.SynchronizeWithVerticalRetrace = true;
+        _graphics.PreparingDeviceSettings += (sender, args) =>
+        {
+            _graphics.PreferMultiSampling = true;
+        };
         _graphics.ApplyChanges();
+        _graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 4;
         _graphics.PreferredBackBufferWidth = 1920;
         _graphics.PreferredBackBufferHeight = 1080;
         _graphics.ApplyChanges();
@@ -32,20 +37,7 @@ public class GtaGame : Game
     public AssetManager AssetManager => _assetManager ?? throw ThrowHelper.GetContentNotLoaded();
 
     public Scene? ActiveScene { get; private set; }
-
-    private void Graphics_PreparingDeviceSettings(object? sender, PreparingDeviceSettingsEventArgs e)
-    {
-        _graphics.PreferMultiSampling = true;
-    }
-
-    protected override void Initialize()
-    {
-        _graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 1;
-        _graphics.ApplyChanges();
-
-        base.Initialize();
-    }
-
+    
     private void FirstUpdate()
     {
         // If we'd activate in LoadContent, the component won't initialize.

@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Client.Content;
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
+using OpenGta2.GameData.Style;
 using SpriteEffect = OpenGta2.Client.Rendering.Effects.SpriteEffect;
 
 namespace OpenGta2.Client.Rendering;
@@ -17,18 +18,14 @@ public class FontRenderer
     {
         _levelProvider = levelProvider;
         _spriteEffect = assetManager.CreateSpriteEffect();
-        _spriteEffect.Texture = levelProvider.Textures.SpritesTexture;
     }
 
-    public void Draw(GraphicsDevice graphicsDevice, Vector2 point, int index, string text)
+    public void Draw(GraphicsDevice graphicsDevice, Vector2 point, int index, string text, int remap = -1)
     {
-        _spriteEffect!.Texture = _levelProvider.Textures.SpritesTexture;
-        _spriteEffect.CurrentTechnique.Passes[0].Apply();
 
         var fontOffset = _levelProvider.Style.FontBase.GetFontOffset(index);
-
-        var spriteFontOffset = _levelProvider.Style.SpriteBases.FontOffset;
         
+        var spaceSize = _levelProvider.Textures.GetSpriteTexture(SpriteKind.Font, (ushort)(fontOffset + ('.' - '!')), remap).Width;
 
         foreach(var c in text)
         {
@@ -36,7 +33,7 @@ public class FontRenderer
             if (ch == ' ')
             {
                 // TODO: Don't know how space is handled yet.
-                point.X += _levelProvider.Style.SpriteEntries[spriteFontOffset + fontOffset + ('.' - '!')].Width;
+                point.X += spaceSize;
                 continue;
             }
 
@@ -51,12 +48,13 @@ public class FontRenderer
                 // TODO: Haven't figured out the rest of the charset yet
                 charNum = '?' - '!';
             }
-            var entry = _levelProvider.Style.SpriteEntries[spriteFontOffset + fontOffset + charNum];
-            
-            QuadRenderer.Render(graphicsDevice, entry.PageNumber, point, point + new Vector2(entry.Width, entry.Height),
-                new Vector2(entry.PageX, entry.PageY) / 256, new Vector2(entry.PageX + entry.Width, entry.PageY + entry.Height) / 256);
 
-            point.X += entry.Width;
+            _spriteEffect.Texture = _levelProvider.Textures.GetSpriteTexture(SpriteKind.Font, (ushort)(fontOffset + charNum));
+            _spriteEffect.CurrentTechnique.Passes[0].Apply();
+
+            QuadRenderer.Render(graphicsDevice, point, point + new Vector2(_spriteEffect.Texture.Width, _spriteEffect.Texture.Height));
+
+            point.X += _spriteEffect.Texture.Width;
         }
     }
 }

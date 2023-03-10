@@ -88,6 +88,13 @@ namespace OpenGta2.GameData.Style
         {
             using var chunk = _riffReader.GetRequiredChunk("SPRG");
 
+            var lengthCheck = chunk.Stream.Length % (256 * 256);
+
+            if (lengthCheck != 0)
+            {
+                throw new InvalidOperationException($"Unexpected chunk length of {chunk.Stream.Length}. Is offset by {lengthCheck}");
+            }
+
             const int PageSize = 256 * 256;
 
             var pageCount = chunk.Stream.Length / PageSize;
@@ -100,7 +107,7 @@ namespace OpenGta2.GameData.Style
                 chunk.Stream.ReadExact(data.AsSpan());
                 pages[page] = new SpritePage(data);
             }
-
+            
             return pages;
         }
 

@@ -29,6 +29,13 @@ public class SpriteEffect : Effect
             Matrix.CreateOrthographicOffCenter(0, vp.Width, 0, vp.Height, -1, 1, out _projection);
 
             _projection = Matrix.CreateOrthographicOffCenter(0, vp.Width, vp.Height, 0, 0, -10);
+
+            if (GraphicsDevice.UseHalfPixelOffset)
+            {
+                _projection.M41 += -0.5f * _projection.M11;
+                _projection.M42 += -0.5f * _projection.M22;
+            }
+
             _lastViewport = vp;
         }
 

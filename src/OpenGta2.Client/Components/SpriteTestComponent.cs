@@ -1,9 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Rendering;
+using OpenGta2.Client.Utilities;
+using OpenGta2.GameData.Style;
 
 namespace OpenGta2.Client.Components;
 
@@ -11,8 +12,6 @@ public class SpriteTestComponent : DrawableGameComponent
 {
     private Rendering.Effects.SpriteEffect? _sb;
     private readonly LevelProvider _levelProvider;
-    private int _sheet = -1;
-    private KeyboardState _lastState;
     private FontRenderer? _fontRenderer;
     public SpriteTestComponent(GtaGame game) : base(game)
     {
@@ -27,23 +26,29 @@ public class SpriteTestComponent : DrawableGameComponent
         _fontRenderer = new FontRenderer(Game.AssetManager, Game.Services.GetService<LevelProvider>());
     }
 
+    private float _time;
+
+    private int _pedSprite = 0;
+    private int _pedRemap = -1;
+
     public override void Update(GameTime gameTime)
     {
-        var kb = Keyboard.GetState();
-
-        if (kb.IsKeyDown(Keys.OemPlus) && !_lastState.IsKeyDown(Keys.OemPlus))
+        _time += gameTime.GetDelta();
+        
+        if (_time >= 0.15)
         {
-            if (++_sheet == _levelProvider.Style.SpriteGraphics.Length)
-                _sheet = -1;
-        }
-        if (kb.IsKeyDown(Keys.OemMinus) && !_lastState.IsKeyDown(Keys.OemMinus))
-        {
-            if (--_sheet < -1)
-                _sheet = _levelProvider.Style.SpriteGraphics.Length - 1;
-        }
+            _time -= 0.15f;
+            _pedSprite++;
 
+            if (_pedSprite >= 158)
+            {
+                _pedSprite = 0;
+                _pedRemap++;
 
-        _lastState = kb;
+                if (_pedRemap >= _levelProvider.Style.PaletteBase.PedRemap)
+                    _pedRemap = -1;
+            }
+        }
 
         base.Update(gameTime);
     }
@@ -51,17 +56,20 @@ public class SpriteTestComponent : DrawableGameComponent
     public override void Draw(GameTime gameTime)
     {
         PerformanceCounters.Drawing.StartMeasurement("DrawSpriteTest");
-
-        if (_sheet >= 0)
-        {
-            _sb!.Texture = _levelProvider.Textures.SpritesTexture;
-            _sb.CurrentTechnique.Passes[0].Apply();
-
-            QuadRenderer.Render(GraphicsDevice, _sheet, Vector2.Zero, Vector2.One * 256 * 2);
-        }
-
+        
+        // font
         _fontRenderer!.Draw(GraphicsDevice, new Vector2(500, 500), 0, "HELLO WORLD");
+        
+        // ped
 
+        _sb!.Texture = _levelProvider.Textures.GetSpriteTexture(SpriteKind.Ped, (ushort)_pedSprite, _pedRemap);
+        _sb.CurrentTechnique.Passes[0].Apply();
+        
+        var point = new Vector2(250);
+        var size = new Vector2(_sb.Texture.Width, _sb.Texture.Height);
+        
+        QuadRenderer.Render(GraphicsDevice, point, point + size * 4);
+ 
         PerformanceCounters.Drawing.StopMeasurement();
     }
 }

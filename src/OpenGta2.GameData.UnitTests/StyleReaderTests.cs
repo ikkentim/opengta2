@@ -16,7 +16,7 @@ public class StyleReaderTests : RiffFileTestBase<StyleReader>
     {
         var result = Sut.Read();
         
-        result.Tiles.Count.ShouldBe(992);
+        result.Tiles.TileCount.ShouldBe(992);
     }
     
     [Fact]

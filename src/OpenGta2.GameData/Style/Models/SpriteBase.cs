@@ -18,4 +18,18 @@ public struct SpriteBase
     public int MapObjOffset => CodeObjOffset + CodeObj;
     public int UserOffset => MapObjOffset + MapObj;
     public int FontOffset => UserOffset + User;
+
+    public int GetOffset(SpriteKind kind)
+    {
+        return kind switch
+        {
+            SpriteKind.Car => CarOffset,
+            SpriteKind.Ped => PedOffset,
+            SpriteKind.CodeObj => CodeObjOffset,
+            SpriteKind.mapObj => MapObjOffset,
+            SpriteKind.User => UserOffset,
+            SpriteKind.Font => FontOffset,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+        };
+    }
 }
