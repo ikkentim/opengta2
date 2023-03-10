@@ -8,11 +8,12 @@
 #endif
 
 matrix MatrixTransform;
+float4 Color = float4(1, 1, 1, 1);
 
-Texture2D Sprites : register(t0);
-sampler SpritesSampler : register(s0) = sampler_state
+Texture2D Texture : register(t0);
+sampler TextureSampler : register(s0) = sampler_state
 {
-    Texture = <Sprites>;
+    Texture = <Texture>;
     AddressU = clamp;
     AddressV = clamp;
 };
@@ -39,7 +40,7 @@ VertexShaderOutput MainVS(const in VertexShaderInput input)
 
 float4 MainPS(const in VertexShaderOutput input) : COLOR
 {
-    return Sprites.Sample(SpritesSampler, input.TexCoord);
+    return Texture.Sample(TextureSampler, input.TexCoord) * Color;
 }
 
 technique T0

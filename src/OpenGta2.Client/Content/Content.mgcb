@@ -26,9 +26,9 @@
 /processorParam:TextureFormat=Compressed
 /build:DebugFont.spritefont
 
-#begin SpriteEffect.fx
+#begin ScreenspaceSpriteEffect.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
-/build:SpriteEffect.fx
+/build:ScreenspaceSpriteEffect.fx
 

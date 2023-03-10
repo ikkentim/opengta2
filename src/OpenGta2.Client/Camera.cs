@@ -12,7 +12,7 @@ public class Camera
         _window = window;
     }
 
-    public Vector3 Position { get; set; } = new(0, 0, 20);
+    public Vector3 Position { get; set; } = new(11.5f, 2.5f, 20);
 
     public Matrix ViewMatrix => Matrix.CreateLookAt(Position, Position - GtaVector.Skywards, GtaVector.Up);
 

@@ -4,20 +4,20 @@ using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Client.Content;
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
+using OpenGta2.Client.Rendering.Effects;
 using OpenGta2.GameData.Style;
-using SpriteEffect = OpenGta2.Client.Rendering.Effects.SpriteEffect;
 
 namespace OpenGta2.Client.Rendering;
 
 public class FontRenderer
 {
     private readonly LevelProvider _levelProvider;
-    private readonly SpriteEffect _spriteEffect;
+    private readonly ScreenspaceSpriteEffect _screenspaceSpriteEffect;
 
     public FontRenderer(AssetManager assetManager, LevelProvider levelProvider)
     {
         _levelProvider = levelProvider;
-        _spriteEffect = assetManager.CreateSpriteEffect();
+        _screenspaceSpriteEffect = assetManager.CreateScreenspaceSpriteEffect();
     }
 
     public void Draw(GraphicsDevice graphicsDevice, Vector2 point, int index, string text, int remap = -1)
@@ -49,12 +49,12 @@ public class FontRenderer
                 charNum = '?' - '!';
             }
 
-            _spriteEffect.Texture = _levelProvider.Textures.GetSpriteTexture(SpriteKind.Font, (ushort)(fontOffset + charNum));
-            _spriteEffect.CurrentTechnique.Passes[0].Apply();
+            _screenspaceSpriteEffect.Texture = _levelProvider.Textures.GetSpriteTexture(SpriteKind.Font, (ushort)(fontOffset + charNum));
+            _screenspaceSpriteEffect.CurrentTechnique.Passes[0].Apply();
 
-            QuadRenderer.Render(graphicsDevice, point, point + new Vector2(_spriteEffect.Texture.Width, _spriteEffect.Texture.Height));
+            QuadRenderer.Render(graphicsDevice, point, point + new Vector2(_screenspaceSpriteEffect.Texture.Width, _screenspaceSpriteEffect.Texture.Height));
 
-            point.X += _spriteEffect.Texture.Width;
+            point.X += _screenspaceSpriteEffect.Texture.Width;
         }
     }
 }

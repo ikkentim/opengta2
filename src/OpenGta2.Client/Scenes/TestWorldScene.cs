@@ -30,16 +30,16 @@ public class TestWorldScene : Scene
         var kb = Keyboard.GetState();
         var cameraInput = Vector3.Zero;
 
-        if (kb.IsKeyDown(Keys.Right) || kb.IsKeyDown(Keys.D))
+        if (kb.IsKeyDown(Keys.D))
             cameraInput += GtaVector.Right;
 
-        if (kb.IsKeyDown(Keys.Left) || kb.IsKeyDown(Keys.A))
+        if (kb.IsKeyDown(Keys.A))
             cameraInput += GtaVector.Left;
 
-        if (kb.IsKeyDown(Keys.Up) || kb.IsKeyDown(Keys.W))
+        if (kb.IsKeyDown(Keys.W))
             cameraInput += GtaVector.Up;
 
-        if (kb.IsKeyDown(Keys.Down) || kb.IsKeyDown(Keys.S))
+        if (kb.IsKeyDown(Keys.S))
             cameraInput += GtaVector.Down;
         if (kb.IsKeyDown(Keys.PageUp))
             cameraInput += GtaVector.Skywards;
@@ -60,6 +60,7 @@ public class TestWorldScene : Scene
     {
         Game.Components.Add(new MapComponent(Game, Camera));
         Game.Components.Add(new SpriteTestComponent(Game));
+        Game.Components.Add(new PedManagerComponent(Game, Camera));
         Game.Components.Add(new DebuggingDrawingComponent(Game));
 
     }

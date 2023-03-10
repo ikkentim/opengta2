@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Globalization;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -9,6 +11,8 @@ namespace OpenGta2.Client.Diagnostics;
 
 public class DebuggingDrawingComponent : DrawableGameComponent
 {
+    private readonly StringBuilder _stringBuilder = new();
+
     private readonly SpriteBatch _spriteBatch;
     private SpriteFont? _font;
     private float _time;
@@ -38,10 +42,21 @@ public class DebuggingDrawingComponent : DrawableGameComponent
     {
         // draw fps and performance counters
         _time += (deltaTime - _time) / 5;
+
+        _stringBuilder.AppendLine(CultureInfo.InvariantCulture,  $"FPS: {1 / _time}");
+        PerformanceCounters.Drawing.AppendText(_stringBuilder);
+
+        foreach (var kv in DiagnosticValues.Values)
+        {
+            _stringBuilder.AppendLine(CultureInfo.InvariantCulture,  $"{kv.Key}: {kv.Value}");
+        }
+
+        var text = _stringBuilder.ToString();
+        _stringBuilder.Clear();
+
+
         _spriteBatch.Begin();
-        _spriteBatch.DrawString(_font, $"FPS: {1 / _time}", new Vector2(10, 10), Color.White, 0, Vector2.Zero, Vector2.One, SpriteEffects.None, 0);
-        _spriteBatch.DrawString(_font, PerformanceCounters.Drawing.GetText(), new Vector2(10, 50), Color.White, 0, Vector2.Zero, Vector2.One,
-            SpriteEffects.None, 0);
+        _spriteBatch.DrawString(_font, text, new Vector2(10, 10), Color.White, 0, Vector2.Zero, Vector2.One, SpriteEffects.None, 0);
         _spriteBatch.End();
 
         PerformanceCounters.Drawing.Reset();

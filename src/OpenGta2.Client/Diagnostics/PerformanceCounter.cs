@@ -41,25 +41,28 @@ public class PerformanceCounter
 
     public string GetText()
     {
-        foreach (var (key, value) in _counters)
-        {
-            _stringBuilder.Append(key);
-            _stringBuilder.Append(": ");
-            _stringBuilder.AppendLine(value.ToString());
-        }
-
-        _stringBuilder.AppendLine();
-
-        foreach (var (key, value) in _measurements)
-        {
-            _stringBuilder.Append(key);
-            _stringBuilder.Append(": ");
-            _stringBuilder.AppendLine(value.TotalMilliseconds.ToString(CultureInfo.InvariantCulture));
-        }
+        AppendText(_stringBuilder);
 
         var result = _stringBuilder.ToString();
         _stringBuilder.Clear();
         return result;
+    }
+
+    public void AppendText(StringBuilder stringBuilder)
+    {
+        foreach (var (key, value) in _counters)
+        {
+            stringBuilder.AppendLine(CultureInfo.InvariantCulture, $"{key}: {value}");
+        }
+
+        stringBuilder.AppendLine();
+
+        foreach (var (key, value) in _measurements)
+        {
+            stringBuilder.Append(key);
+            stringBuilder.Append(": ");
+            stringBuilder.AppendLine(value.TotalMilliseconds.ToString(CultureInfo.InvariantCulture));
+        }
     }
 
     [Conditional("DEBUG")]
