@@ -14,6 +14,7 @@ public class TestWorldScene : Scene
     
     public override void Initialize()
     {
+        Game.Components.Add(new AudioTestComponent(Game));
         Game.Components.Add(new MapComponent(Game, Camera));
         Game.Components.Add(new SpriteTestComponent(Game));
         Game.Components.Add(new PedManagerComponent(Game, Camera));
