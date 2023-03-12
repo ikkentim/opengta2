@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
@@ -10,8 +11,9 @@ namespace OpenGta2.Client.Components;
 
 public class AudioTestComponent : GtaComponent
 {
-    private SoundLibrary _library;
-    private Controls _controls;
+    private readonly SoundLibrary _library;
+    private readonly Controls _controls;
+    private readonly Random _random = new();
 
     public AudioTestComponent(GtaGame game) : base(game)
     {
@@ -31,7 +33,7 @@ public class AudioTestComponent : GtaComponent
     {
         if (_controls.IsKeyDown(Keys.Tab))
         {
-            var sfx = _library.GetSound(309);
+            var sfx = _library.GetSound(_random.Next(0, 2) == 0 ? 309 : 310);
             var se = SoundEffect.FromStream(sfx.Stream);
             se.Play();
         }
