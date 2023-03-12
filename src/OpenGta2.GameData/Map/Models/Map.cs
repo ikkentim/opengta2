@@ -11,4 +11,34 @@ public record Map(CompressedMap CompressedMap, MapObject[] Objects, MapZone[] Zo
         var column = CompressedMap.Columns[num];
         return column;
     }
+
+    public ref BlockInfo GetBlock(int x, int y, int z)
+    {
+        var column = GetColumn(x, y);
+
+        if (z < 0 || z >= column.Height)
+        {
+            throw new ArgumentOutOfRangeException(nameof(z));
+        }
+        
+        return ref CompressedMap.Blocks[column.Blocks[column.Offset]];
+    }
+
+    public int GetGroundZ(int x, int y)
+    {
+        var col = GetColumn(x, y);
+
+        for (var zo = 1; zo < col.Height - col.Offset; zo++)
+        {
+            var z = zo + col.Offset;
+            var block = CompressedMap.Blocks[col.Blocks[zo]];
+
+            if (block.Lid.TileGraphic == 0)
+            {
+                return z;
+            }
+        }
+
+        return col.Height;
+    }
 }

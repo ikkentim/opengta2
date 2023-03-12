@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using OpenGta2.Client.Content;
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Rendering;
@@ -9,16 +8,16 @@ using OpenGta2.Client.Rendering.Effects;
 
 namespace OpenGta2.Client.Components;
 
-public class MapComponent : DrawableGameComponent
+public class MapComponent : DrawableGtaComponent
 {
-    private readonly GtaGame _game;
+    private const bool Noon = true;
+
     private readonly Camera _camera;
     private readonly LevelProvider _levelProvider;
     private BlockFaceEffect? _blockFaceEffect;
 
     public MapComponent(GtaGame game, Camera camera) : base(game)
     {
-        _game = game;
         _camera = camera;
 
         _levelProvider = game.Services.GetService<LevelProvider>();
@@ -26,8 +25,13 @@ public class MapComponent : DrawableGameComponent
 
     protected override void LoadContent()
     {
-        _blockFaceEffect = _game.AssetManager.CreateBlockFaceEffect();
+        _blockFaceEffect = Game.AssetManager.CreateBlockFaceEffect();
         _blockFaceEffect.Tiles = _levelProvider.Textures!.TilesTexture;
+
+        if (Noon)
+        {
+            _blockFaceEffect.AmbientLevel = 1;
+        }
     }
     
     public override void Update(GameTime gameTime)
@@ -38,8 +42,6 @@ public class MapComponent : DrawableGameComponent
 
     public override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.SamplerStates[0] = SamplerState.AnisotropicClamp;
-
         Span<Light> lights = stackalloc Light[BlockFaceEffect.MaxLights];
 
         _blockFaceEffect!.View = _camera.ViewMatrix;
@@ -54,7 +56,7 @@ public class MapComponent : DrawableGameComponent
             
             _blockFaceEffect.SetLights(CollectLights(lights, chunk.ChunkLocation));
             _blockFaceEffect.CurrentTechnique.Passes["Opaque"].Apply();
-            _game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.OpaquePrimitiveCount);
+            Game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, chunk.OpaquePrimitiveCount);
         }
 
         PerformanceCounters.Drawing.StopMeasurement();
@@ -69,7 +71,7 @@ public class MapComponent : DrawableGameComponent
             
             _blockFaceEffect.SetLights(CollectLights(lights, chunk.ChunkLocation));
             _blockFaceEffect.CurrentTechnique.Passes["Flat"].Apply();
-            _game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, chunk.FlatIndexOffset, chunk.FlatPrimitiveCount);
+            Game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, chunk.FlatIndexOffset, chunk.FlatPrimitiveCount);
         }
         
         PerformanceCounters.Drawing.StopMeasurement();
@@ -80,14 +82,19 @@ public class MapComponent : DrawableGameComponent
 
     private void ApplyChunk(RenderableMapChunk chunk)
     {
-        _game.GraphicsDevice.Indices = chunk.Indices;
-        _game.GraphicsDevice.SetVertexBuffer(chunk.Vertices);
+        Game.GraphicsDevice.Indices = chunk.Indices;
+        Game.GraphicsDevice.SetVertexBuffer(chunk.Vertices);
         _blockFaceEffect!.World = chunk.Translation;
     }
     
 
     private Span<Light> CollectLights(Span<Light> buffer, Point chunkLocation)
     {
+        if (Noon)
+        {
+            return buffer[..0];
+        }
+
         PerformanceCounters.Drawing.StartMeasurement("CollectLights");
 
         // point-light performance isn't that great when rendering many chunks. lets just

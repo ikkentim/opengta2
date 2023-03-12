@@ -2,20 +2,18 @@
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Rendering;
-using OpenGta2.Client.Utilities;
 using OpenGta2.GameData.Style;
+using SharpDX.XAudio2;
 
 namespace OpenGta2.Client.Components;
 
-public class SpriteTestComponent : DrawableGameComponent
+public class SpriteTestComponent : DrawableGtaComponent
 {
     private FontRenderer? _fontRenderer;
 
     public SpriteTestComponent(GtaGame game) : base(game)
     {
     }
-
-    private new GtaGame Game => (GtaGame)base.Game;
     
     protected override void LoadContent()
     {
@@ -27,7 +25,7 @@ public class SpriteTestComponent : DrawableGameComponent
         PerformanceCounters.Drawing.StartMeasurement("DrawSpriteTest");
         
         // font
-        _fontRenderer!.Draw(GraphicsDevice, new Vector2(500, 500), 0, "HELLO WORLD");
+        // _fontRenderer!.Draw(GraphicsDevice, new Vector2(500, 500), 0, "HELLO WORLD");
         
         PerformanceCounters.Drawing.StopMeasurement();
     }

@@ -17,7 +17,7 @@ Console.WriteLine(map2);
 
 
 var map = map2.CompressedMap;
-var col = map.Columns[map.Base[1, 4]];
+var col = map2.GetColumn(4, 1);
 
 var bNum = col.Blocks.Last();
 var block = map.Blocks[bNum];

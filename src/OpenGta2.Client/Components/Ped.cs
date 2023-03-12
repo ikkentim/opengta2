@@ -51,7 +51,7 @@ public class Ped
     private float AnimationFrameTime =>
         Animation switch
         {
-            PedAnimation.Walking => 0.05f,
+            PedAnimation.Walking => 0.06f,
             PedAnimation.Idle => 0.2f,
             _ => 0,
         };

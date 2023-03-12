@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using OpenGta2.Client.Utilities;
 
 namespace OpenGta2.Client.Diagnostics;
@@ -43,7 +44,7 @@ public class DebuggingDrawingComponent : DrawableGameComponent
         // draw fps and performance counters
         _time += (deltaTime - _time) / 5;
 
-        _stringBuilder.AppendLine(CultureInfo.InvariantCulture,  $"FPS: {1 / _time}");
+        _stringBuilder.AppendLine(CultureInfo.InvariantCulture,  $"FPS: {(1 / _time):N1}");
         PerformanceCounters.Drawing.AppendText(_stringBuilder);
 
         foreach (var kv in DiagnosticValues.Values)

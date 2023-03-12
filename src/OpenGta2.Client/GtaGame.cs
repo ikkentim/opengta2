@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.VisualBasic.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -10,9 +11,8 @@ namespace OpenGta2.Client;
 
 public class GtaGame : Game
 {
-    private readonly GraphicsDeviceManager _graphics;
     private AssetManager? _assetManager;
-
+    private readonly Controls _controls = new();
     private bool _hasReceivedUpdate;
 
     public GtaGame()
@@ -20,18 +20,18 @@ public class GtaGame : Game
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
 
-        _graphics = new GraphicsDeviceManager(this);
-        _graphics.GraphicsProfile = GraphicsProfile.HiDef;
-        _graphics.SynchronizeWithVerticalRetrace = true;
-        _graphics.PreparingDeviceSettings += (sender, args) =>
+        var graphics = new GraphicsDeviceManager(this);
+        graphics.GraphicsProfile = GraphicsProfile.HiDef;
+        graphics.SynchronizeWithVerticalRetrace = true;
+        graphics.PreparingDeviceSettings += (sender, args) =>
         {
-            _graphics.PreferMultiSampling = true;
+            graphics.PreferMultiSampling = true;
         };
-        _graphics.ApplyChanges();
-        _graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 4;
-        _graphics.PreferredBackBufferWidth = 1920;
-        _graphics.PreferredBackBufferHeight = 1080;
-        _graphics.ApplyChanges();
+        graphics.ApplyChanges();
+        graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 4;
+        graphics.PreferredBackBufferWidth = 1920;
+        graphics.PreferredBackBufferHeight = 1080;
+        graphics.ApplyChanges();
     }
 
     public AssetManager AssetManager => _assetManager ?? throw ThrowHelper.GetContentNotLoaded();
@@ -53,6 +53,7 @@ public class GtaGame : Game
         _assetManager = new AssetManager();
         _assetManager.LoadContent(Content);
 
+        Services.AddService(_controls);
         Services.AddService(_assetManager);
 
         base.LoadContent();
@@ -73,15 +74,18 @@ public class GtaGame : Game
 
     protected override void Update(GameTime gameTime)
     {
+        _controls.Update();
+
         if (!_hasReceivedUpdate)
         {
             _hasReceivedUpdate = true;
             FirstUpdate();
         }
 
-        if (Keyboard.GetState()
-            .IsKeyDown(Keys.Escape))
+        if (_controls.IsKeyDown(Control.Menu))
+        {
             Exit();
+        }
 
         base.Update(gameTime);
     }
@@ -89,7 +93,67 @@ public class GtaGame : Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
-
         base.Draw(gameTime);
+    }
+}
+
+public struct IntVector2
+{
+    public int X;
+    public int Y;
+
+    public IntVector2(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+}
+
+public struct IntVector3
+{
+    public int X;
+    public int Y;
+    public int Z;
+
+    public IntVector3(int x, int y, int z)
+    {
+        X = x;
+        Y = y;
+        Z = z;
+    }
+
+    public static IntVector3 Floor(Vector3 vec)
+    {
+        return new IntVector3((int)vec.X, (int)vec.Y, (int)vec.Z);
+    }
+
+    public bool Equals(IntVector3 other)
+    {
+        return X == other.X && Y == other.Y && Z == other.Z;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is IntVector3 other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(X, Y, Z);
+    }
+    
+    public static bool operator ==(IntVector3 lhs, IntVector3 rhs)
+    {
+        return lhs.Equals(rhs);
+    }
+
+    public static bool operator !=(IntVector3 lhs, IntVector3 rhs)
+    {
+        return !lhs.Equals(rhs);
+    }
+
+    public static implicit operator Vector3(IntVector3 vec)
+    {
+        return new Vector3(vec.X, vec.Y, vec.Z);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using OpenGta2.Client.Components;
 using OpenGta2.Client.Levels;
 
 namespace OpenGta2.Client;
@@ -24,6 +25,29 @@ public class Camera
 
 
     public BoundingFrustum Frustum { get; } = new(Matrix.Identity);
+    
+    public Ped? AttachedToPed { get; private set; }
+
+    public CameraMode Mode { get; private set; }
+
+    public void Attach(Ped ped)
+    {
+        AttachedToPed = ped;
+        Mode = CameraMode.AttachedToPed;
+    }
+
+    public void Free()
+    {
+        Mode = CameraMode.Free;
+    }
+
+    public void Unfree()
+    {
+        if (AttachedToPed != null)
+        {
+            Mode = CameraMode.AttachedToPed;
+        }
+    }
 
     private Matrix GetProjection()
     {

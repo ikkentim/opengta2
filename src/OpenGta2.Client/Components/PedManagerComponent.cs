@@ -15,39 +15,24 @@ using OpenGta2.GameData.Style;
 
 namespace OpenGta2.Client.Components;
 
-public class PedManagerComponent : DrawableGameComponent
+public class PedManagerComponent : DrawableGtaComponent
 {
+    private readonly Controls _controls;
     private readonly Camera _camera;
     private IndexBuffer? _indices;
     private VertexBuffer? _vertices;
     private WorldSpriteEffect? _spriteEfect;
-    private new GtaGame Game => (GtaGame)base.Game;
-    private LevelProvider _levelProvider;
+    private readonly LevelProvider _levelProvider;
 
     public PedManagerComponent(GtaGame game, Camera camera) : base(game)
     {
+        _controls = game.Services.GetService<Controls>();
         _camera = camera;
-        _levelProvider = Game.Services.GetService<LevelProvider>();
+        _levelProvider = game.Services.GetService<LevelProvider>();
 
-        Peds.Add(new Ped(new Vector3(11.5f, 2.5f, GetZ(12, 2)), 0, 25));
-    }
+        Peds.Add(new Ped(new Vector3(11.5f, 2.5f, _levelProvider.Map.GetGroundZ(12, 2)), 0, 25));
 
-    private int GetZ(int x, int y)
-    {
-        var b = _levelProvider.Map.CompressedMap.Base[y, x];
-        var col = _levelProvider.Map.CompressedMap.Columns[b];
-
-        for (var z = col.Height - col.Offset - 1; z > 0; z--)
-        {
-            var block = _levelProvider.Map.CompressedMap.Blocks[col.Blocks[z]];
-
-            if (block.Lid.TileGraphic != 0 &&
-                (block.Top.TileGraphic != 0 || block.Right.TileGraphic != 0 || block.Bottom.TileGraphic != 0 || block.Left.TileGraphic != 0))
-            {
-                return col.Offset + y + 1;
-            }
-        }
-        return col.Offset + 1;
+        camera.Attach(Peds[0]);
     }
 
     private List<Ped> Peds { get; } = new();
@@ -77,25 +62,22 @@ public class PedManagerComponent : DrawableGameComponent
 
         base.LoadContent();
     }
-
-    private KeyboardState _lastState;
+    
     public override void Update(GameTime gameTime)
     {
-        var kb = Keyboard.GetState();
         var fd = 0f;
         var lr = 0f;
-
-
-        if (kb.IsKeyDown(Keys.Right))
+        
+        if (_controls.IsKeyPressed(Control.Right))
             lr++;
 
-        if (kb.IsKeyDown(Keys.Left))
+        if (_controls.IsKeyPressed(Control.Left))
             lr--;
 
-        if (kb.IsKeyDown(Keys.Up))
+        if (_controls.IsKeyPressed(Control.Forward))
             fd++;
 
-        if (kb.IsKeyDown(Keys.Down))
+        if (_controls.IsKeyPressed(Control.Backward))
             fd--;
 
         if (Peds.Count > 0)
@@ -106,19 +88,17 @@ public class PedManagerComponent : DrawableGameComponent
             
             var heading = new Vector2(MathF.Sin(-player.Rotation), MathF.Cos(-player.Rotation));
             player.Position += new Vector3(heading * fd * gameTime.GetDelta(), 0) * 2;
-
-            _camera.Position = player.Position + GtaVector.Skywards * 5;
-
+            
             player.Animation = fd != 0 ? PedAnimation.Walking  : PedAnimation.Idle;
         }
         
-        if (kb.IsKeyDown(Keys.OemPlus) && !_lastState.IsKeyDown(Keys.OemPlus))
+        if (_controls.IsKeyDown(Keys.OemPlus))
         {
             _pedAnimNum++;
             _pedAnimOveride = true;
         }
 
-        if (kb.IsKeyDown(Keys.OemMinus) && !_lastState.IsKeyDown(Keys.OemMinus))
+        if (_controls.IsKeyDown(Keys.OemMinus))
         {
             _pedAnimNum--;
             _pedAnimOveride = true;
@@ -130,14 +110,9 @@ public class PedManagerComponent : DrawableGameComponent
         }
 
         DiagnosticValues.Values["PedAnim"] = _pedAnimNum.ToString(CultureInfo.InvariantCulture);
-
-        _lastState = kb;
-
-
-        base.Update(gameTime);
     }
 
-    private bool _pedAnimOveride = false;
+    private bool _pedAnimOveride;
     private int _pedAnimNum = 53;
 
     public override void Draw(GameTime gameTime)

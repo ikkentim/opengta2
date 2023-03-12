@@ -1,7 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using OpenGta2.GameData.Style;
 
 namespace OpenGta2.Client.Rendering;
 
