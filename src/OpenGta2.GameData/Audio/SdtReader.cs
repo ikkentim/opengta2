@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using OpenGta2.GameData.Riff;
+﻿using System.Runtime.InteropServices;
 
 namespace OpenGta2.GameData.Audio
 {

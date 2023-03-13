@@ -1,8 +1,9 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using OpenGta2.Client.Rendering;
 
-namespace OpenGta2.Client.Rendering.Effects;
+namespace OpenGta2.Client.Assets.Effects;
 
 public class BlockFaceEffect : Effect, IEffectMatrices
 {

@@ -1,9 +1,9 @@
 ﻿using System;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using OpenGta2.Client.Rendering.Effects;
+using OpenGta2.Client.Assets.Effects;
 
-namespace OpenGta2.Client.Content;
+namespace OpenGta2.Client.Assets;
 
 public sealed class AssetManager : IDisposable
 {
@@ -14,10 +14,10 @@ public sealed class AssetManager : IDisposable
 
     public void LoadContent(ContentManager contentManager)
     {
-        _blockFaceEffect = new BlockFaceEffect(contentManager.Load<Effect>("BlockFaceEffect"));
-        _screenspaceSpriteEffect = new ScreenspaceSpriteEffect(contentManager.Load<Effect>("ScreenspaceSpriteEffect"));
-        _worldSpriteEffect = new WorldSpriteEffect(contentManager.Load<Effect>("ScreenspaceSpriteEffect"));
-        _debugFont = contentManager.Load<SpriteFont>("DebugFont");
+        _blockFaceEffect = new BlockFaceEffect(contentManager.Load<Effect>("Effects/BlockFaceEffect"));
+        _screenspaceSpriteEffect = new ScreenspaceSpriteEffect(contentManager.Load<Effect>("Effects/ScreenspaceSpriteEffect"));
+        _worldSpriteEffect = new WorldSpriteEffect(contentManager.Load<Effect>("Effects/ScreenspaceSpriteEffect"));
+        _debugFont = contentManager.Load<SpriteFont>("Fonts/DebugFont");
     }
     
     public BlockFaceEffect CreateBlockFaceEffect()

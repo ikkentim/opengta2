@@ -1,42 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
+﻿using System.Globalization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using OpenGta2.Client.Assets.Effects;
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
+using OpenGta2.Client.Peds;
 using OpenGta2.Client.Rendering;
-using OpenGta2.Client.Rendering.Effects;
 using OpenGta2.Client.Utilities;
 using OpenGta2.GameData.Style;
 
 namespace OpenGta2.Client.Components;
 
-public class PedManagerComponent : DrawableGtaComponent
+public class PedManagerComponent : BaseDrawableComponent
 {
     private readonly Controls _controls;
     private readonly Camera _camera;
+    private readonly PedManager _pedManager;
     private IndexBuffer? _indices;
     private VertexBuffer? _vertices;
     private WorldSpriteEffect? _spriteEfect;
     private readonly LevelProvider _levelProvider;
 
-    public PedManagerComponent(GtaGame game, Camera camera) : base(game)
+    public PedManagerComponent(GtaGame game, Camera camera, PedManager pedManager, Controls controls, LevelProvider levelProvider) : base(game)
     {
-        _controls = game.Services.GetService<Controls>();
+        _controls = controls;
         _camera = camera;
-        _levelProvider = game.Services.GetService<LevelProvider>();
-
-        Peds.Add(new Ped(new Vector3(11.5f, 2.5f, _levelProvider.Map.GetGroundZ(12, 2)), 0, 25));
-
-        camera.Attach(Peds[0]);
+        _pedManager = pedManager;
+        _levelProvider = levelProvider;
     }
-
-    private List<Ped> Peds { get; } = new();
-
+    
     protected override void LoadContent()
     {
         _spriteEfect = Game.AssetManager.CreateWorldSpriteEffect();
@@ -65,33 +58,6 @@ public class PedManagerComponent : DrawableGtaComponent
     
     public override void Update(GameTime gameTime)
     {
-        var fd = 0f;
-        var lr = 0f;
-        
-        if (_controls.IsKeyPressed(Control.Right))
-            lr++;
-
-        if (_controls.IsKeyPressed(Control.Left))
-            lr--;
-
-        if (_controls.IsKeyPressed(Control.Forward))
-            fd++;
-
-        if (_controls.IsKeyPressed(Control.Backward))
-            fd--;
-
-        if (Peds.Count > 0)
-        {
-            var player = Peds[0];
-
-            player.Rotation += lr * MathHelper.TwoPi * gameTime.GetDelta();
-            
-            var heading = new Vector2(MathF.Sin(-player.Rotation), MathF.Cos(-player.Rotation));
-            player.Position += new Vector3(heading * fd * gameTime.GetDelta(), 0) * 2;
-            
-            player.Animation = fd != 0 ? PedAnimation.Walking  : PedAnimation.Idle;
-        }
-        
         if (_controls.IsKeyDown(Keys.OemPlus))
         {
             _pedAnimNum++;
@@ -104,7 +70,7 @@ public class PedManagerComponent : DrawableGtaComponent
             _pedAnimOveride = true;
         }
         
-        foreach (var ped in Peds)
+        foreach (var ped in _pedManager.Peds)
         {
             ped.UpdateAnimation(gameTime.GetDelta());
         }
@@ -120,7 +86,7 @@ public class PedManagerComponent : DrawableGtaComponent
         GraphicsDevice.SetVertexBuffer(_vertices);
         GraphicsDevice.Indices = _indices;
 
-        foreach (var ped in Peds)
+        foreach (var ped in _pedManager.Peds)
         {
             if (!_pedAnimOveride)
             {

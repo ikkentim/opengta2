@@ -1,14 +1,14 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace OpenGta2.Client.Rendering.Effects;
+namespace OpenGta2.Client.Assets.Effects;
 
 public class WorldSpriteEffect : Effect
 {
     private readonly EffectParameter _matrixParam;
     private readonly EffectParameter _textureParam;
     private readonly EffectParameter _colorParam;
-    
+
     public Texture2D? Texture { get; set; }
     public Matrix TransformMatrix { get; set; }
     public Color Color { get; set; } = Color.White;

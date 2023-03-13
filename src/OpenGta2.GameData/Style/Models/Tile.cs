@@ -17,7 +17,7 @@ public readonly ref struct Tile
 
     public byte this[byte y, byte x] => GetPixel(x, y);
 
-    private byte GetPixel(byte x, byte y)
+    public byte GetPixel(byte x, byte y)
     {
         if (x >= Width) throw new ArgumentOutOfRangeException(nameof(x));
         if (y >= Height) throw new ArgumentOutOfRangeException(nameof(y));

@@ -1,10 +1,8 @@
-﻿using System.Reflection;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using OpenGta2.Client.Content;
-using OpenGta2.Client.Diagnostics;
+using OpenGta2.Client.Assets;
+using OpenGta2.Client.Assets.Effects;
 using OpenGta2.Client.Levels;
-using OpenGta2.Client.Rendering.Effects;
 using OpenGta2.GameData.Style;
 
 namespace OpenGta2.Client.Rendering;

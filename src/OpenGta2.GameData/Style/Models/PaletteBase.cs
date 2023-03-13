@@ -1,5 +1,4 @@
-﻿using System.Reflection.PortableExecutable;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace OpenGta2.GameData.Style;
 

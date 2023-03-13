@@ -17,18 +17,18 @@
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
-/build:BlockFaceEffect.fx
+/build:Effects/BlockFaceEffect.fx
 
 #begin DebugFont.spritefont
 /importer:FontDescriptionImporter
 /processor:LocalizedFontProcessor
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
-/build:DebugFont.spritefont
+/build:Fonts/DebugFont.spritefont
 
 #begin ScreenspaceSpriteEffect.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
-/build:ScreenspaceSpriteEffect.fx
+/build:Effects/ScreenspaceSpriteEffect.fx
 

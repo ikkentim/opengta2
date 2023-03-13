@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
-using OpenGta2.Client.Components;
 using OpenGta2.Client.Levels;
+using OpenGta2.Client.Peds;
 
 namespace OpenGta2.Client;
 

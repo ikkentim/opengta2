@@ -2,9 +2,9 @@
 
 namespace OpenGta2.Client.Components;
 
-public abstract class GtaComponent : GameComponent
+public abstract class BaseComponent : GameComponent
 {
-    protected GtaComponent(GtaGame game) : base(game)
+    protected BaseComponent(GtaGame game) : base(game)
     {
         Game = game;
     }

@@ -1,7 +1,6 @@
-﻿using System;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 
-namespace OpenGta2.Client.Components;
+namespace OpenGta2.Client.Peds;
 
 public class Ped
 {
@@ -23,7 +22,7 @@ public class Ped
         get => _animation;
         set
         {
-            if(_animation == value) return;
+            if (_animation == value) return;
 
             _animation = value;
             AnimationFrame = 0;
@@ -31,7 +30,7 @@ public class Ped
     }
 
     public int AnimationFrame { get; private set; }
-    
+
     private int MaxAnimationFrame =>
         Animation switch
         {
@@ -39,7 +38,7 @@ public class Ped
             PedAnimation.Idle => 12,
             _ => 0,
         };
-    
+
     public int AnimationBase =>
         Animation switch
         {
@@ -67,9 +66,7 @@ public class Ped
             AnimationFrame++;
 
             if (AnimationFrame >= MaxAnimationFrame)
-            {
                 AnimationFrame = 0;
-            }
         }
 
     }

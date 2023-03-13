@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace OpenGta2.Client.Rendering.Effects;
+namespace OpenGta2.Client.Assets.Effects;
 
 public class ScreenspaceSpriteEffect : Effect
 {

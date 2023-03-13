@@ -2,12 +2,10 @@
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Rendering;
-using OpenGta2.GameData.Style;
-using SharpDX.XAudio2;
 
 namespace OpenGta2.Client.Components;
 
-public class SpriteTestComponent : DrawableGtaComponent
+public class SpriteTestComponent : BaseDrawableComponent
 {
     private FontRenderer? _fontRenderer;
 

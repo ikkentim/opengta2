@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.GameData.Style;
 
@@ -68,12 +66,7 @@ public class StyleTextureSet
         {
             for (byte x = 0; x < sprite.Width; x++)
             {
-                var colorEntry = sprite[y, x];
-
-                _buffer[y * sprite.Width + x] = colorEntry == 0
-                    ? 0
-                    : palette.GetColor(colorEntry)
-                        .Argb;
+                _buffer[y * sprite.Width + x] = GetPaletteColor(ref palette, sprite[y, x]);
             }
         }
 
@@ -89,53 +82,6 @@ public class StyleTextureSet
         var entry = _style.SpriteEntries[spriteBase + number];
         var page = _style.SpriteGraphics[entry.PageNumber];
         return page.GetSprite(entry, (ushort)(spriteBase + number));
-    }
-
-    private static Texture2D CreateSpritesTexture(Style style, GraphicsDevice graphicsDevice)
-    {
-        var spritePages = style.SpriteGraphics.Length;
-
-        // TODO: remove magic numbers
-        var result = new Texture2D(graphicsDevice, 256, 256, false, SurfaceFormat.Color, spritePages);
-
-        var pageData = new uint[256 * 256];
-        var pageNumber = 0;
-        foreach (var spritePage in style.SpriteGraphics)
-        {
-            foreach (var sprite in style.SpriteEntries.Select((sprite, index) => (index, sprite)).Where(s => s.sprite.PageNumber == pageNumber))
-            {
-                var spritePosition = new Point((int)sprite.sprite.PageX, (int)sprite.sprite.PageY);
-                var size = new Point(sprite.sprite.Width, sprite.sprite.Height);
-
-                var physicalPaletteNumber = style.PaletteIndex.PhysPalette[sprite.index + style.PaletteBase.SpriteOffset];
-                var palette = style.PhysicsalPalette.GetPalette(physicalPaletteNumber);
-
-                for (var y = 0; y < size.Y; y++)
-                {
-                    for (var x = 0; x < size.X; x++)
-                    {
-                        var point = new Point(x, y);
-
-                        var pagePosition = spritePosition + point;
-
-                        var pixelIndex = pagePosition.Y * 256 + pagePosition.X;
-                        // var colorEntry = spritePage.Data[pixelIndex];
-
-                        // pageData[pixelIndex] = colorEntry == 0
-                        //     ? 0
-                        //     : palette.GetColor(colorEntry)
-                        //         .Argb;
-                    }
-                }
-            }
-
-            result.SetData(0, pageNumber, null, pageData, 0, pageData.Length);
-            
-            Array.Clear(pageData);
-            pageNumber++;
-        }
-
-        return result;
     }
 
     private static Texture2D CreateTilesTexture(Style style, GraphicsDevice graphicsDevice)
@@ -156,17 +102,12 @@ public class StyleTextureSet
             var palette = style.PhysicsalPalette.GetPalette(physicalPaletteNumber);
 
             var tile = style.Tiles.GetTile(tileNumber);
-
+            
             for (byte y = 0; y < Tile.Height; y++)
             {
                 for (byte x = 0; x < Tile.Width; x++)
                 {
-                    
-                    var colorEntry = tile[y, x]; // 0 is always transparent
-                    tileData[y * Tile.Width + x] = colorEntry == 0
-                        ? 0
-                        : palette.GetColor(colorEntry)
-                            .Argb;
+                    tileData[y * Tile.Width + x] = GetPaletteColor(ref palette, tile[y, x]);
                 }
             }
 
@@ -174,5 +115,10 @@ public class StyleTextureSet
         }
 
         return result;
+    }
+
+    private static uint GetPaletteColor(ref Palette palette, byte colorEntry)
+    {
+        return colorEntry == 0 ? 0 : palette.GetColor(colorEntry).Argb;
     }
 }

@@ -2,9 +2,9 @@
 
 namespace OpenGta2.Client.Components;
 
-public abstract class DrawableGtaComponent : DrawableGameComponent
+public abstract class BaseDrawableComponent : DrawableGameComponent
 {
-    protected DrawableGtaComponent(GtaGame game) : base(game)
+    protected BaseDrawableComponent(GtaGame game) : base(game)
     {
         Game = game;
     }

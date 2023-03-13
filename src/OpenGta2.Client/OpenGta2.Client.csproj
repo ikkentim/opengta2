@@ -13,12 +13,12 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Content\bin\**" />
-    <Compile Remove="Content\obj\**" />
-    <EmbeddedResource Remove="Content\bin\**" />
-    <EmbeddedResource Remove="Content\obj\**" />
-    <None Remove="Content\bin\**" />
-    <None Remove="Content\obj\**" />
+    <Compile Remove="Assets\bin\**" />
+    <Compile Remove="Assets\obj\**" />
+    <EmbeddedResource Remove="Assets\bin\**" />
+    <EmbeddedResource Remove="Assets\obj\**" />
+    <None Remove="Assets\bin\**" />
+    <None Remove="Assets\obj\**" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.1.303" />

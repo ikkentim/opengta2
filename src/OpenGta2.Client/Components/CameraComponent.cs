@@ -5,14 +5,14 @@ using OpenGta2.Client.Utilities;
 
 namespace OpenGta2.Client.Components;
 
-public class CameraComponent : GtaComponent
+public class CameraComponent : BaseComponent
 {
     private readonly Controls _controls;
 
-    public CameraComponent(GtaGame game, Camera camera) : base(game)
+    public CameraComponent(GtaGame game, Camera camera, Controls controls) : base(game)
     {
         Camera = camera;
-        _controls = game.Services.GetService<Controls>();
+        _controls = controls;
     }
     
     private Camera Camera { get; }

@@ -1,5 +1,7 @@
 ﻿using OpenGta2.Client.Components;
 using OpenGta2.Client.Diagnostics;
+using OpenGta2.Client.Peds;
+using OpenGta2.Client.Utilities;
 
 namespace OpenGta2.Client.Scenes;
 
@@ -14,12 +16,16 @@ public class TestWorldScene : Scene
     
     public override void Initialize()
     {
-        Game.Components.Add(new AudioTestComponent(Game));
-        Game.Components.Add(new MapComponent(Game, Camera));
-        Game.Components.Add(new SpriteTestComponent(Game));
-        Game.Components.Add(new PedManagerComponent(Game, Camera));
-        Game.Components.Add(new CameraComponent(Game, Camera));
-        Game.Components.Add(new DebuggingDrawingComponent(Game));
+        Game.Services.ReplaceService(Camera);
 
+        Game.Services.ReplaceService(new PedManager());
+
+        AddComponent<AudioTestComponent>();
+        AddComponent<MapComponent>();
+        AddComponent<SpriteTestComponent>();
+        AddComponent<PlayerControllerComponent>();
+        AddComponent<PedManagerComponent>();
+        AddComponent<CameraComponent>();
+        AddComponent<DebuggingDrawingComponent>();
     }
 }

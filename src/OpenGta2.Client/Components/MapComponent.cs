@@ -1,14 +1,14 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using OpenGta2.Client.Assets.Effects;
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Rendering;
-using OpenGta2.Client.Rendering.Effects;
 
 namespace OpenGta2.Client.Components;
 
-public class MapComponent : DrawableGtaComponent
+public class MapComponent : BaseDrawableComponent
 {
     private const bool Noon = true;
 
@@ -16,11 +16,10 @@ public class MapComponent : DrawableGtaComponent
     private readonly LevelProvider _levelProvider;
     private BlockFaceEffect? _blockFaceEffect;
 
-    public MapComponent(GtaGame game, Camera camera) : base(game)
+    public MapComponent(GtaGame game, Camera camera, LevelProvider levelProvider) : base(game)
     {
         _camera = camera;
-
-        _levelProvider = game.Services.GetService<LevelProvider>();
+        _levelProvider = levelProvider;
     }
 
     protected override void LoadContent()
