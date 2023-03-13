@@ -30,7 +30,7 @@ public struct IntVector3
     {
         return obj is IntVector3 other && Equals(other);
     }
-
+    
     public override int GetHashCode()
     {
         return HashCode.Combine(X, Y, Z);

@@ -23,7 +23,7 @@ public class SpriteTestComponent : BaseDrawableComponent
         PerformanceCounters.Drawing.StartMeasurement("DrawSpriteTest");
         
         // font
-        // _fontRenderer!.Draw(GraphicsDevice, new Vector2(500, 500), 0, "HELLO WORLD");
+        _fontRenderer!.Draw(GraphicsDevice, new Vector2(5, 100), 0, "HI");
         
         PerformanceCounters.Drawing.StopMeasurement();
     }

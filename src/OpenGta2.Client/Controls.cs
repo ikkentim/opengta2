@@ -17,22 +17,6 @@ public class Controls
     }
 
     /// <summary>
-    /// Is key up since current frame.
-    /// </summary>
-    public bool IsKeyUp(Keys key)
-    {
-        return _current.IsKeyUp(key) && _previous.IsKeyDown(key);
-    }
-    
-    /// <summary>
-    /// Is key down.
-    /// </summary>
-    public bool IsKeyPressed(Keys key)
-    {
-        return _current.IsKeyDown(key);
-    }
-
-    /// <summary>
     /// Is key down since current frame.
     /// </summary>
     public bool IsKeyDown(Control key)
@@ -40,6 +24,14 @@ public class Controls
         return IsKeyDown(GetKey(key));
     }
 
+    /// <summary>
+    /// Is key up since current frame.
+    /// </summary>
+    public bool IsKeyUp(Keys key)
+    {
+        return _current.IsKeyUp(key) && _previous.IsKeyDown(key);
+    }
+    
     /// <summary>
     /// Is key up since current frame.
     /// </summary>
@@ -51,12 +43,20 @@ public class Controls
     /// <summary>
     /// Is key down.
     /// </summary>
+    public bool IsKeyPressed(Keys key)
+    {
+        return _current.IsKeyDown(key);
+    }
+
+    /// <summary>
+    /// Is key down.
+    /// </summary>
     public bool IsKeyPressed(Control key)
     {
         return IsKeyPressed(GetKey(key));
     }
 
-    private Keys GetKey(Control control)
+    private static Keys GetKey(Control control)
     {
         // should be configurable at some point
         return control switch

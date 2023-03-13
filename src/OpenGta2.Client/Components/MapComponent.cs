@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using OpenGta2.Client.Assets.Effects;
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
@@ -10,33 +11,34 @@ namespace OpenGta2.Client.Components;
 
 public class MapComponent : BaseDrawableComponent
 {
-    private const bool Noon = true;
-
     private readonly Camera _camera;
     private readonly LevelProvider _levelProvider;
+    private readonly Controls _controls;
     private BlockFaceEffect? _blockFaceEffect;
+    private bool _noon;
 
-    public MapComponent(GtaGame game, Camera camera, LevelProvider levelProvider) : base(game)
+    public MapComponent(GtaGame game, Camera camera, LevelProvider levelProvider, Controls controls) : base(game)
     {
         _camera = camera;
         _levelProvider = levelProvider;
+        _controls = controls;
     }
 
     protected override void LoadContent()
     {
         _blockFaceEffect = Game.AssetManager.CreateBlockFaceEffect();
         _blockFaceEffect.Tiles = _levelProvider.Textures!.TilesTexture;
-
-        if (Noon)
-        {
-            _blockFaceEffect.AmbientLevel = 1;
-        }
     }
     
     public override void Update(GameTime gameTime)
     {
         _levelProvider.Update(_camera);
-        base.Update(gameTime);
+
+        if (_controls.IsKeyDown(Keys.OemTilde))
+        {
+            _noon = !_noon;
+            _blockFaceEffect!.AmbientLevel = _noon ? 1 : 0.3f;
+        }
     }
 
     public override void Draw(GameTime gameTime)
@@ -89,7 +91,7 @@ public class MapComponent : BaseDrawableComponent
 
     private Span<Light> CollectLights(Span<Light> buffer, Point chunkLocation)
     {
-        if (Noon)
+        if (_noon)
         {
             return buffer[..0];
         }

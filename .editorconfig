@@ -237,21 +237,33 @@ dotnet_naming_style.upper_case.capitalization = all_upper
 
 resharper_convert_to_auto_property_highlighting = none
 
-# S1135: Track uses of "TODO" tags
-# Justification: Keep track of uncompleted work
-dotnet_diagnostic.S1135.severity = warning
-
-# S2344: Enumeration type names should not have "Flags" or "Enum" suffixes
-# Justification: We allow "Flags"
-dotnet_diagnostic.S2344.severity = none
+# Disabled diagnostics
 
 # CA1707: Identifiers should not contain underscores
 # Justification: We allow underscores in certain enum fields
 dotnet_diagnostic.CA1707.severity = none
+
+# S1104: Fields should not have public accessibility
+# Justification: We allow structs with public fields
+dotnet_diagnostic.S1104.severity = none
+
+# S1135: Track uses of "TODO" tags
+# Justification: Keep track of uncompleted work
+dotnet_diagnostic.S1135.severity = warning
+
+# S2328: "GetHashCode" should not reference mutable fields
+# Justification: We allow structs with public mutable fields which should allow be allowed to implement GetHashCode using these fields
+dotnet_diagnostic.S2328.severity = none
+
+
+# S2344: Enumeration type names should not have "Flags" or "Enum" suffixes
+# Justification: We allow "Flags"
+dotnet_diagnostic.S2344.severity = none
 
 [**Tests/**.cs]
 
 # Test projects
 
 # CA1707: Identifiers should not contain underscores
+# Justification: We use underscores in unittest methods for text explaining the outcome of the test
 dotnet_code_quality.CA1707.api_surface = private, internal, friend
