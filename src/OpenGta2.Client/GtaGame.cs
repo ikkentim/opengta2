@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using OpenGta2.Client.Assets;
 using OpenGta2.Client.Scenes;
 using OpenGta2.Client.Utilities;
+using SharpDX.MediaFoundation;
 
 namespace OpenGta2.Client;
 
@@ -43,7 +44,9 @@ public class GtaGame : Game
         // ActivateScene(new LoadingWorldScene(this, "data/wil.gmp", "data/wil.sty", new TestWorldScene(this))); // LEVEL 1
         // ActivateScene(new LoadingWorldScene(this, "data/lorne2e.gmp", "data/wil.sty", new TestWorldScene(this))); // BONUS 1a
         // ActivateScene(new LoadingWorldScene(this, "data/ste.gmp", "data/ste.sty", new TestWorldScene(this))); // LEVEL 2
-        ActivateScene(new LoadingWorldScene(this, "data/bil.gmp", "data/bil.sty", new TestWorldScene(this))); // LEVEL 3
+        // ActivateScene(new LoadingWorldScene(this, "data/bil.gmp", "data/bil.sty", new TestWorldScene(this))); // LEVEL 3
+
+        ActivateScene((new IntroScene(this, new LoadingWorldScene(this, "data/bil.gmp", "data/bil.sty", new TestWorldScene(this)))));
     }
 
     protected override void LoadContent()
