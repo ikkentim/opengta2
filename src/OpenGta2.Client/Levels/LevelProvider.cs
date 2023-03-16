@@ -31,17 +31,18 @@ public class LevelProvider
     private Map? _map;
     private StyleTextureSet? _textures;
     private Style? _style;
+    private CollisionMap? _collisionMap;
 
     public LevelProvider(GraphicsDevice graphicsDevice)
     {
         _graphicsDevice = graphicsDevice;
     }
-
+    
     public Map Map => _map ?? throw ThrowHelper.GetLevelNotLoaded();
 
+    public CollisionMap CollisionMap => _collisionMap ?? throw ThrowHelper.GetLevelNotLoaded();
 
     public Style Style => _style ?? throw ThrowHelper.GetLevelNotLoaded();
-
 
     public StyleTextureSet Textures => _textures ?? throw ThrowHelper.GetLevelNotLoaded();
 
@@ -66,6 +67,8 @@ public class LevelProvider
 
             _maxChunksX = (int)Math.Ceiling(Map.Width / (float)ChunkSize);
             _maxChunksY = (int)Math.Ceiling(Map.Height / (float)ChunkSize);
+
+            _collisionMap = new CollisionMap(_map);
         }
         catch
         {
@@ -76,6 +79,7 @@ public class LevelProvider
 
     public void UnloadLevel()
     {
+        _collisionMap = null;
         _map = null;
         _style = null;
         _textures = null;

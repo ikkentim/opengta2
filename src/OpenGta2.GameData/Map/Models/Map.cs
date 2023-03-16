@@ -16,12 +16,24 @@ public record Map(CompressedMap CompressedMap, MapObject[] Objects, MapZone[] Zo
     {
         var column = GetColumn(x, y);
 
-        if (z < 0 || z >= column.Height)
+        if (z < column.Offset || z >= column.Height)
         {
             throw new ArgumentOutOfRangeException(nameof(z));
         }
         
-        return ref CompressedMap.Blocks[column.Blocks[column.Offset]];
+        return ref CompressedMap.Blocks[column.Blocks[z - column.Offset]];
+    }
+
+    public BlockInfo? TryGetBlock(int x, int y, int z)
+    {
+        var column = GetColumn(x, y);
+
+        if (z < column.Offset || z >= column.Height)
+        {
+            return null;
+        }
+        
+        return CompressedMap.Blocks[column.Blocks[z - column.Offset]];
     }
 
     public int GetGroundZ(int x, int y)

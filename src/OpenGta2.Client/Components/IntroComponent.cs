@@ -146,7 +146,7 @@ public unsafe class IntroComponent : BaseDrawableComponent
 
             _texture!.SetData(_buffer2);
 
-            _effect.CurrentTechnique.Passes[0].Apply();
+            _effect!.CurrentTechnique.Passes[0].Apply();
 
             var vp = GraphicsDevice.Viewport;
             QuadRenderer.Render(GraphicsDevice, Vector2.Zero, new Vector2(vp.Width, vp.Height));

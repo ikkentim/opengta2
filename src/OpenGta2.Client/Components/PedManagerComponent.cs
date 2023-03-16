@@ -75,7 +75,7 @@ public class PedManagerComponent : BaseDrawableComponent
             ped.UpdateAnimation(gameTime.GetDelta());
         }
 
-        DiagnosticValues.Values["PedAnim"] = _pedAnimNum.ToString(CultureInfo.InvariantCulture);
+        DiagnosticValues.Set("PedAnim", _pedAnimNum.ToString(CultureInfo.InvariantCulture));
     }
 
     private bool _pedAnimOveride;

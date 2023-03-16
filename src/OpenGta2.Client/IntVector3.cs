@@ -15,9 +15,15 @@ public struct IntVector3
         Y = y;
         Z = z;
     }
-
+    
     public static IntVector3 Floor(Vector3 vec)
     {
+        return new IntVector3((int)vec.X, (int)vec.Y, (int)vec.Z);
+    }
+
+    public static IntVector3 Ceiling(Vector3 vec)
+    {
+        vec = Vector3.Ceiling(vec);
         return new IntVector3((int)vec.X, (int)vec.Y, (int)vec.Z);
     }
 

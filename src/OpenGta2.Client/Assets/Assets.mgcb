@@ -13,22 +13,28 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin BlockFaceEffect.fx
+#begin Effects/BlockFaceEffect.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Effects/BlockFaceEffect.fx
 
-#begin DebugFont.spritefont
+#begin Effects/DebugLineEffect.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Effects/DebugLineEffect.fx
+
+#begin Effects/ScreenspaceSpriteEffect.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Effects/ScreenspaceSpriteEffect.fx
+
+#begin Fonts/DebugFont.spritefont
 /importer:FontDescriptionImporter
 /processor:LocalizedFontProcessor
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
 /build:Fonts/DebugFont.spritefont
-
-#begin ScreenspaceSpriteEffect.fx
-/importer:EffectImporter
-/processor:EffectProcessor
-/processorParam:DebugMode=Auto
-/build:Effects/ScreenspaceSpriteEffect.fx
 

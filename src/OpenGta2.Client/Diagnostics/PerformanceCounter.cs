@@ -47,7 +47,7 @@ public class PerformanceCounter
         _stringBuilder.Clear();
         return result;
     }
-
+    
     public void AppendText(StringBuilder stringBuilder)
     {
         foreach (var (key, value) in _counters)
@@ -64,8 +64,7 @@ public class PerformanceCounter
             stringBuilder.AppendLine(value.TotalMilliseconds.ToString(CultureInfo.InvariantCulture));
         }
     }
-
-    [Conditional("DEBUG")]
+    
     public void Reset()
     {
         foreach (var key in _counters.Keys)
