@@ -10,8 +10,8 @@ namespace OpenGta2.Client.Levels;
 /// Exposes a <see cref="Map"/> to the physics code.
 /// </summary>
 /// <remarks>
-/// Walls come from the <c>Wall</c> flag of block side faces. Surfaces are the tops of blocks with a lid tile.
-/// Slopes, diagonal blocks and partial blocks are not handled yet: they behave like full blocks.
+/// Walls come from the <c>Wall</c> flag of block side faces, plus the outline of partial and diagonal blocks (see <see cref="BlockShape"/>).
+/// Surfaces are the tops of blocks with a lid tile, following slopes and diagonal slopes.
 /// </remarks>
 public class MapCollisionWorld : ICollisionWorld
 {
@@ -51,6 +51,8 @@ public class MapCollisionWorld : ICollisionWorld
                     {
                         results.Add(new WallSegment(new Vector2(x, y), new Vector2(x + 1, y), z, z + 1));
                     }
+
+                    AddSolidPolygonWalls(x, y, z, results);
                 }
             }
         }
@@ -80,7 +82,11 @@ public class MapCollisionWorld : ICollisionWorld
                 results[^1] = new Surface(previousHeight, z - previousHeight);
             }
 
-            var height = z + SlopeHeight.Get(block.SlopeType.SlopeType, fractionX, fractionY);
+            // no surface here, for example next to a partial block: the block doesn't cover this part of the cell
+            var blockHeight = BlockShape.GetSurfaceHeight(block.SlopeType.SlopeType, block.Lid.TileGraphic, fractionX, fractionY);
+            if (!blockHeight.HasValue) continue;
+
+            var height = z + blockHeight.Value;
             results.Add(new Surface(height, float.PositiveInfinity));
             previousHeight = height;
         }
@@ -108,8 +114,36 @@ public class MapCollisionWorld : ICollisionWorld
         if (y >= _map.Height && face == Face.Top) return false;
 
         // either side of an edge can carry the wall flag
-        if (IsInMap(x, y) && _map.IsWall(new IntVector3(x, y, z), face)) return true;
-        return IsInMap(neighbourX, neighbourY) && _map.IsWall(new IntVector3(neighbourX, neighbourY, z), neighbourFace);
+        return HasWallFlag(x, y, z, face) || HasWallFlag(neighbourX, neighbourY, z, neighbourFace);
+    }
+
+    private bool HasWallFlag(int x, int y, int z, Face face)
+    {
+        if (!IsInMap(x, y)) return false;
+
+        // blocks that don't fill the cell get their walls from their shape, not from the faces of the cell
+        if (_map.TryGetBlock(x, y, z) is not { } block || BlockShape.GetSolidPolygon(block.SlopeType.SlopeType).Length > 0)
+        {
+            return false;
+        }
+
+        return _map.IsWall(new IntVector3(x, y, z), face);
+    }
+
+    /// <summary>
+    /// Adds the walls around the solid part of partial blocks and diagonal blocks.
+    /// </summary>
+    private void AddSolidPolygonWalls(int x, int y, int z, List<WallSegment> results)
+    {
+        if (!IsInMap(x, y) || _map.TryGetBlock(x, y, z) is not { } block) return;
+
+        var polygon = BlockShape.GetSolidPolygon(block.SlopeType.SlopeType);
+        for (var i = 0; i < polygon.Length; i++)
+        {
+            var a = polygon[i] + new Vector2(x, y);
+            var b = polygon[(i + 1) % polygon.Length] + new Vector2(x, y);
+            results.Add(new WallSegment(a, b, z, z + 1));
+        }
     }
 
     private bool IsInMap(int x, int y) => x >= 0 && y >= 0 && x < _map.Width && y < _map.Height;
