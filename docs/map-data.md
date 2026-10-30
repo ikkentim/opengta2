@@ -42,7 +42,7 @@ Client extensions (`MapExtensions`): `GetBlock(IntVector3)`, `IsWall(cell, face)
 | 14–15 | `Rotation` | 0/90/180/270 |
 
 ### GroundType
-`Air, Road, Pavement, Field` — material of the block's top surface. Not used by game logic yet.
+`Air, Road, Pavement, Field`. Per the format spec, `Air` means "nothing solid" and the bottom layer (z=0) is automatically water. In `bil.gmp` lid blocks with `Air` are common (11,595 of ~85,000) and are mostly roofs; many "building top" blocks are `Field`. Collision only uses it to decide which surfaces are standable (see [collision-design.md](collision-design.md)).
 
 ### SlopeType
 67 values: 26° and 7° slopes in four directions (sub-steps `_1.._8`), 45° slopes, diagonal blocks, diagonal slopes,
@@ -54,5 +54,5 @@ Collision derives walkable surface heights from slopes (`SlopeHeight`) and from 
 - Side faces with the `Wall` flag block movement. The flag may be set on only one of the two blocks sharing an edge,
   so the current code checks both sides (the cell's own face, and the neighbour's opposite face).
 - A block's lid tile does not itself make a block "solid" for pedestrians — the player stands at the first air layer.
-- Bridges, overpasses and tunnels: not yet investigated. How a column represents "air under a bridge" (blank-tile blocks
-  vs. gaps) needs to be checked against real data when we implement the third axis.
+- Bridges, overpasses and tunnels: a column simply has several lid-bearing blocks with gaps between them; every lid block is a surface whose headroom is the gap up to the next lid block above. In `bil.gmp` about 9,300 cells have a surface with a gap of at least 0.6 above it that a character can walk through (underpasses, tunnels). Verified by walking random characters through them: they stay on the lower level and never clip into the ceiling.
+- The 3-sided diagonal slope (lid tile 1023) is a wedge/spire placed on top of a diagonal block; per the spec, walking on top of diagonals is not supported, so those upper areas are unreachable by design.

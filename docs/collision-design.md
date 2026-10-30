@@ -19,7 +19,8 @@ Implementation notes / deviations from the proposal below:
   - *Diagonal slopes*: the 3-sided kind (lid tile 1023) is a wedge that rises from the diagonal towards one corner and is open air on the other side; the 4-sided kind is a flat plateau on one half with a ramp down to the opposite corner. Both are surfaces only (no extra walls; the legs rely on the wall flags).
   - Verified on `bil.gmp` (scratch harness): charging each of 400 sampled partial/diagonal blocks from six directions never ends inside the block (834 charges), and 500 random walkers never end inside one.
 - **Deep falls:** `CharacterMover` teleports a character that has fallen more than `MaxFallDistance` (8) without landing, or dropped below Z = −1, to the nearest standable surface (spiral search up to 10 blocks, must have headroom and wall clearance; among surfaces at the same distance, the one closest to the height it fell from). Raises `CharacterMover.Rescued(from, to)`.
-- Known gaps: `GroundType` (roofs of `Air` ground type are currently walkable), not yet run interactively in the game.
+- **Standable surfaces:** `Surface.Standable` is false for blocks with ground type `Air` (in the data these are mostly roofs: 75% are the topmost block of their column, 20% carry wall flags) and for layer 0 (the format spec says bottom-layer blocks are water). They stay solid, so nothing falls through them, but the fall rescue never teleports a character onto one.
+- Known gaps: no drowning/water behaviour yet (layer 0 is just a non-standable surface), not yet run interactively in the game.
 - Verified on `bil.gmp` with 500 random walkers (scratch harness, not in repo): no out-of-bounds/NaN, no fall-throughs, no rescues needed, largest grounded height change per frame 0.33 (< step height 0.35).
 
 ## 1. Vertical model

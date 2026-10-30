@@ -12,7 +12,11 @@ public readonly record struct WallSegment(Vector2 A, Vector2 B, float ZMin, floa
 /// </summary>
 /// <param name="Height">Height of the surface.</param>
 /// <param name="Headroom">Free distance above the surface until the next solid thing (infinity if open sky).</param>
-public readonly record struct Surface(float Height, float Headroom);
+/// <param name="Standable">
+/// Whether it is a sensible place to put a character, for example after a fall rescue. Roofs and water are solid (a character
+/// that ends up there doesn't fall through) but not standable.
+/// </param>
+public readonly record struct Surface(float Height, float Headroom, bool Standable = true);
 
 public readonly record struct Bounds2(Vector2 Min, Vector2 Max)
 {

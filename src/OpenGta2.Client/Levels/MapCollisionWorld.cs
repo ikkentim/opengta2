@@ -71,6 +71,7 @@ public class MapCollisionWorld : ICollisionWorld
 
         // find the layers that have a lid; those are the walkable tops and the solid undersides
         var previousHeight = float.NaN;
+        var previousStandable = true;
         for (var z = column.Offset; z < column.Height; z++)
         {
             ref var block = ref _map.CompressedMap.Blocks[column.Blocks[z - column.Offset]];
@@ -79,7 +80,7 @@ public class MapCollisionWorld : ICollisionWorld
             if (!float.IsNaN(previousHeight))
             {
                 // headroom of the previous surface is the gap up to the (flat) underside of this block
-                results[^1] = new Surface(previousHeight, z - previousHeight);
+                results[^1] = new Surface(previousHeight, z - previousHeight, previousStandable);
             }
 
             // no surface here, for example next to a partial block: the block doesn't cover this part of the cell
@@ -87,7 +88,9 @@ public class MapCollisionWorld : ICollisionWorld
             if (!blockHeight.HasValue) continue;
 
             var height = z + blockHeight.Value;
-            results.Add(new Surface(height, float.PositiveInfinity));
+            // blocks on the bottom layer are water, and blocks with ground type air are mostly roofs
+            previousStandable = z > 0 && block.SlopeType.GroundType != GroundType.Air;
+            results.Add(new Surface(height, float.PositiveInfinity, previousStandable));
             previousHeight = height;
         }
     }

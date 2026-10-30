@@ -253,7 +253,7 @@ public sealed class CharacterMover
 
                 foreach (var surface in _surfaces)
                 {
-                    if (surface.Headroom < body.Height) continue;
+                    if (surface.Headroom < body.Height || !surface.Standable) continue;
                     if (found && MathF.Abs(surface.Height - body.FallStartZ) >= MathF.Abs(best.Z - body.FallStartZ)) continue;
                     if (!HasClearance(candidate, surface.Height, in body)) continue;
 

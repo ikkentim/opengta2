@@ -325,6 +325,25 @@ public class CharacterMoverTests
     }
 
     [Fact]
+    public void Rescue_skips_surfaces_that_are_not_standable()
+    {
+        var world = new FakeWorld
+        {
+            // a roof (not standable) right next to the pit, solid ground further away
+            SurfaceFunc = (x, _) => x < 5
+                ? Array.Empty<Surface>()
+                : x < 8 ? new[] { new Surface(2, float.PositiveInfinity, Standable: false) } : new[] { new Surface(2, float.PositiveInfinity) }
+        };
+        var mover = new CharacterMover(world);
+        var body = new CharacterBody(new Vector3(3, 0, 2), R);
+
+        Run(mover, ref body, Vector2.Zero, 3);
+
+        body.Grounded.ShouldBeTrue();
+        body.Position.X.ShouldBeGreaterThanOrEqualTo(8f);
+    }
+
+    [Fact]
     public void Rescue_avoids_spots_inside_walls()
     {
         var world = new FakeWorld
