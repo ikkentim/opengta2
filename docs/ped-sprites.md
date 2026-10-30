@@ -28,11 +28,17 @@ GTA2 water is deadly, not swimmable. The format spec says the bottom layer (z=0)
 lands on one drowns. Splash and sound are not in the ped frames; a splash is probably an object or effect sprite
 (not looked for yet).
 
-Plan for the game, when we get to it:
-1. Expose "landed on a non-standable layer-0 surface" from `CharacterMover` (for example a `LandedInWater` event).
-2. Play ped sprites 148–150 at the water position, then the usual death handling (the player gets "wasted").
-3. Verify the 148–150 guess in the game before relying on it; the numbers may be different in other style files
-   (`wil.sty`, `ste.sty`), so check those too.
+How it works now:
+1. `MapCollisionWorld` marks surfaces on layer 0 as `Surface.Water` (and not `Standable`). They are solid, so the character lands on the water.
+2. `CharacterMover` raises `EnteredWater` once when a character settles onto a water surface and sets `CharacterBody.InWater`.
+3. `PlayerControllerComponent` reacts by calling `Ped.Drown()`: the player loses control, the ped plays sprites 148–150
+   (`PedAnimation.Drowning`, 0.25 s per frame, plays once), disappears after 1 s, and after 1.5 s (`Ped.DrowningDuration`)
+   respawns at the start (`Respawn`). The debug text shows `LastDrowning` with the position.
+4. Not done: splash effect, splash/drowning sound, player death handling beyond the respawn ("wasted"), cars in water.
+
+The sprite numbers 148–150 are still a guess; if the animation looks wrong in the game, change `Ped.AnimationBase` for
+`PedAnimation.Drowning`. Other style files (`wil.sty`, `ste.sty`) need to be checked too.
+
 
 ## How to re-create the contact sheets
 
@@ -40,3 +46,19 @@ The sheets were made with a throwaway console app that read the style with `Styl
 `style.SpriteEntries[SpriteBases.PedOffset + n]`, mapped its pixels through the sprite's default palette
 (`PaletteIndex.PhysPalette[sprite.Number + PaletteBase.SpriteOffset]`, `PhysicalPalette.GetPalette`) and drew them
 scaled 4x with the index printed above each frame. The logic is the same as `StyleTextureSet.CreateSpriteTexture`.
+
+## Effect sprites and remaps (splash search)
+
+- The code object sprites (552) and the ped sprites are **identical in `bil.sty`, `ste.sty` and `wil.sty`** (same pixels, same
+  palettes), so the splash is not a level-specific sprite.
+- The format documents say code objects are only placed by code, so nothing in the style file labels them
+  (see [format-notes.md](format-notes.md)).
+- The style has 6 **remap palettes for code objects**. Fixed a bug found on the way: `PaletteBase.CodeObjRemapOffset` added
+  `CodeObjRemap` instead of `PedRemap`, so the remap palettes of code objects, map objects, user sprites and fonts were looked up
+  47 palettes too early (3124 instead of 3171 for code objects). With the fix, the burst sprites 327-345 look green (remap 1),
+  blue (2) and cyan-white (3) instead of only the default blue-white; remaps 4-6 look garbled.
+- **Conclusion so far:** every sprite of the style file was paged through in the sprite viewer (F3) against the original game on `ste`,
+  and none looks like the water splash, not even in the other remaps. No other file in the game folder holds sprites
+  (`data/frontend` is menu screens, `nyc.gci` vehicle data). The splash is therefore most likely an effect that the game
+  executable draws itself (the format document mentions tiles 992-1023 as used internally by the game). We have no data for it.
+  The burst sprites 327-345 are the explosion fireball, not a splash.

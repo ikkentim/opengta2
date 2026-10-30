@@ -46,6 +46,11 @@ public sealed class CharacterMover
     /// </summary>
     public event Action<Vector3, Vector3>? Rescued;
 
+    /// <summary>
+    /// Raised once when a character settles onto a water surface (by falling or walking onto it), with its position.
+    /// </summary>
+    public event Action<Vector3>? EnteredWater;
+
     private const float RescueSearchRadius = 10f;
     private const float RescueSearchStep = 0.5f;
     private const int RescueDirections = 16;
@@ -187,6 +192,7 @@ public sealed class CharacterMover
             {
                 body.Position = new Vector3(body.Position.X, body.Position.Y, height);
                 body.VelocityZ = 0;
+                UpdateWater(ref body, height);
                 return true;
             }
 
@@ -214,10 +220,12 @@ public sealed class CharacterMover
             body.Position = new Vector3(body.Position.X, body.Position.Y, landing);
             body.VelocityZ = 0;
             body.Grounded = true;
+            UpdateWater(ref body, landing);
         }
         else
         {
             body.Position = new Vector3(body.Position.X, body.Position.Y, newFeet);
+            body.InWater = false;
 
             if (body.FallStartZ - newFeet > MaxFallDistance || newFeet < -1)
             {
@@ -226,6 +234,30 @@ public sealed class CharacterMover
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Sets <see cref="CharacterBody.InWater"/> from the surface the body stands on and raises <see cref="EnteredWater"/> the moment it becomes true.
+    /// </summary>
+    private void UpdateWater(ref CharacterBody body, float height)
+    {
+        var inWater = false;
+        foreach (var surface in _surfaces)
+        {
+            if (surface.Water && MathF.Abs(surface.Height - height) < 1e-3f)
+            {
+                inWater = true;
+                break;
+            }
+        }
+
+        var entered = inWater && !body.InWater;
+        body.InWater = inWater;
+
+        if (entered)
+        {
+            EnteredWater?.Invoke(body.Position);
+        }
     }
 
     /// <summary>
@@ -267,6 +299,7 @@ public sealed class CharacterMover
                 body.Position = best;
                 body.VelocityZ = 0;
                 body.Grounded = true;
+                body.InWater = false;
                 Rescued?.Invoke(from, best);
                 return;
             }

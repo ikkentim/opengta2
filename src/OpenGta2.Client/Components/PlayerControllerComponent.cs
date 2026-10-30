@@ -21,6 +21,8 @@ public class PlayerControllerComponent : BaseComponent
     private Ped? _player;
     private bool _moveSlow;
     private CharacterMover? _mover;
+    private Vector3 _spawn;
+
     public PlayerControllerComponent(GtaGame game, Controls controls, PedManager pedManager, LevelProvider levelProvider, Camera camera) : base(game)
     {
         _controls = controls;
@@ -31,14 +33,41 @@ public class PlayerControllerComponent : BaseComponent
 
     public override void Initialize()
     {
-        _player = new Ped(new Vector3(11.5f, 2.5f, _levelProvider.Map.GetGroundZ(11, 2) + 0.01f), 0, 25);
+        _spawn = new Vector3(11.5f, 2.5f, _levelProvider.Map.GetGroundZ(11, 2) + 0.01f);
+        _player = new Ped(_spawn, 0, 25);
         _pedManager.Peds.Add(_player);
         _camera.Attach(_player);
+
+        _mover = new CharacterMover(_levelProvider.CollisionWorld);
+        _mover.Rescued += (from, to) => DiagnosticValues.Set("LastRescue", $"{from.X:F2} {from.Y:F2} {from.Z:F2} -> {to.X:F2} {to.Y:F2} {to.Z:F2}");
+        _mover.EnteredWater += position =>
+        {
+            DiagnosticValues.Set("LastDrowning", $"{position.X:F2} {position.Y:F2}");
+            _player?.Drown();
+        };
+    }
+
+    /// <summary>
+    /// Puts the player back at the start after drowning.
+    /// </summary>
+    private void Respawn(Ped player)
+    {
+        player.Position = _spawn;
+        player.Body.VelocityZ = 0;
+        player.Body.Grounded = false;
+        player.Body.InWater = false;
+        player.Body.FallStartZ = _spawn.Z;
+        player.Revive();
     }
 
     public override void Update(GameTime gameTime)
     {
-        if (_player == null) return;
+        if (_player == null || _mover == null) return;
+
+        if (_player.DrownedFinished)
+        {
+            Respawn(_player);
+        }
 
         var fd = 0f;
         var lr = 0f;
@@ -60,6 +89,17 @@ public class PlayerControllerComponent : BaseComponent
             _moveSlow = !_moveSlow;
         }
 
+        if (_player.IsDrowning)
+        {
+            // no control while sinking
+            fd = 0;
+            lr = 0;
+        }
+        else if (_controls.IsKeyDown(Keys.NumPad5))
+        {
+            TeleportToCameraCentre(_player);
+        }
+
         _player.Rotation += lr * MathHelper.TwoPi * gameTime.GetDelta();
             
         var heading = new Vector2(MathF.Sin(-_player.Rotation), MathF.Cos(-_player.Rotation));
@@ -69,17 +109,52 @@ public class PlayerControllerComponent : BaseComponent
         DiagnosticHighlight.Add(_player.Position - new Vector3(radius, radius, 0), new Vector3(radius * 2, radius * 2, _player.Body.Height), Color.Blue);
 
         var dt = gameTime.GetDelta();
-        if (_mover == null)
-        {
-            _mover = new CharacterMover(_levelProvider.CollisionWorld);
-            _mover.Rescued += (from, to) => DiagnosticValues.Set("LastRescue", $"{from.X:F2} {from.Y:F2} {from.Z:F2} -> {to.X:F2} {to.Y:F2} {to.Z:F2}");
-        }
-
         _mover.Move(ref _player.Body, dt > 0 ? new System.Numerics.Vector2(delta.X, delta.Y) / dt : default, dt);
 
         UpdateDiagnostics(_player);
 
-        _player.Animation = fd != 0 ? PedAnimation.Walking  : PedAnimation.Idle;
+        if (!_player.IsDrowning)
+        {
+            _player.Animation = fd != 0 ? PedAnimation.Walking : PedAnimation.Idle;
+        }
+    }
+
+    /// <summary>
+    /// Debug helper: puts the player on the highest surface in the middle of the screen (where the camera is looking)
+    /// and makes the camera follow the player again.
+    /// </summary>
+    private void TeleportToCameraCentre(Ped player)
+    {
+        var x = _camera.Position.X;
+        var y = _camera.Position.Y;
+
+        var surfaces = new List<OpenGta2.Physics.Surface>();
+        _levelProvider.CollisionWorld.GetSurfaces(x, y, surfaces);
+
+        // highest surface with enough room for the player to stand on
+        var found = false;
+        var height = 0f;
+        foreach (var surface in surfaces)
+        {
+            if (surface.Headroom < player.Body.Height || (found && surface.Height <= height)) continue;
+
+            height = surface.Height;
+            found = true;
+        }
+
+        if (!found)
+        {
+            DiagnosticValues.Set("Teleport", $"no surface at {x:F2} {y:F2}");
+            return;
+        }
+
+        player.Body.Position = new System.Numerics.Vector3(x, y, height + 0.001f);
+        player.Body.VelocityZ = 0;
+        player.Body.Grounded = true;
+        player.Body.FallStartZ = height;
+
+        DiagnosticValues.Set("Teleport", $"to {x:F2} {y:F2} {height:F2}");
+        _camera.Unfree();
     }
 
     /// <summary>

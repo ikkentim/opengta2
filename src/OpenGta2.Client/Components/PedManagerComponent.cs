@@ -88,6 +88,8 @@ public class PedManagerComponent : BaseDrawableComponent
 
         foreach (var ped in _pedManager.Peds)
         {
+            if (!ped.IsVisible) continue;
+
             if (!_pedAnimOveride)
             {
                 _pedAnimNum = ped.AnimationFrame + ped.AnimationBase;

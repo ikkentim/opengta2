@@ -25,6 +25,7 @@ public class TestWorldScene : Scene
         AddComponent<SpriteTestComponent>();
         AddComponent<PlayerControllerComponent>();
         AddComponent<PedManagerComponent>();
+        AddComponent<SpritePreviewComponent>();
         AddComponent<CameraComponent>();
         AddComponent<DebuggingDrawingComponent>();
     }

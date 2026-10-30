@@ -16,7 +16,11 @@ public readonly record struct WallSegment(Vector2 A, Vector2 B, float ZMin, floa
 /// Whether it is a sensible place to put a character, for example after a fall rescue. Roofs and water are solid (a character
 /// that ends up there doesn't fall through) but not standable.
 /// </param>
-public readonly record struct Surface(float Height, float Headroom, bool Standable = true);
+/// <param name="Water">
+/// Whether the surface is water. Characters can't tell the difference while moving (it is solid), but
+/// <see cref="CharacterMover.EnteredWater"/> is raised when one settles on it.
+/// </param>
+public readonly record struct Surface(float Height, float Headroom, bool Standable = true, bool Water = false);
 
 public readonly record struct Bounds2(Vector2 Min, Vector2 Max)
 {

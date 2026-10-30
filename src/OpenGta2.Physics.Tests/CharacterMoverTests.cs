@@ -343,6 +343,67 @@ public class CharacterMoverTests
         body.Position.X.ShouldBeGreaterThanOrEqualTo(8f);
     }
 
+    // dry land at height 3 for x < 2, water at height 1 beyond
+    private static FakeWorld WaterWorld() => new()
+    {
+        SurfaceFunc = (x, _) => new[] { x < 2 ? new Surface(3, float.PositiveInfinity) : new Surface(1, float.PositiveInfinity, Standable: false, Water: true) }
+    };
+
+    [Fact]
+    public void Falling_into_water_raises_EnteredWater_once()
+    {
+        var mover = new CharacterMover(WaterWorld());
+        var events = new List<Vector3>();
+        mover.EnteredWater += events.Add;
+        var body = BodyAt(0, 0, 3);
+
+        Run(mover, ref body, new Vector2(1, 0), 4); // walk off the shore, fall, stand in the water for a while
+
+        events.Count.ShouldBe(1);
+        events[0].X.ShouldBeGreaterThan(2f);
+        events[0].Z.ShouldBe(1f, 1e-3f);
+        body.InWater.ShouldBeTrue();
+        body.Grounded.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Walking_on_dry_land_does_not_raise_EnteredWater()
+    {
+        var mover = new CharacterMover(WaterWorld());
+        var raised = false;
+        mover.EnteredWater += _ => raised = true;
+        var body = BodyAt(0, 0, 3);
+
+        Run(mover, ref body, new Vector2(0.5f, 0), 2); // stays on land
+
+        raised.ShouldBeFalse();
+        body.InWater.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Leaving_the_water_clears_InWater_and_allows_a_new_event()
+    {
+        var mover = new CharacterMover(WaterWorld());
+        var count = 0;
+        mover.EnteredWater += _ => count++;
+        var body = new CharacterBody(new Vector3(5, 0, 1), R) { Grounded = true };
+
+        Run(mover, ref body, Vector2.Zero, 0.1f);
+        count.ShouldBe(1);
+
+        // lifted out of the water (like a respawn) and dropped back in
+        body.Position = new Vector3(0, 0, 3);
+        body.Grounded = true;
+        Run(mover, ref body, Vector2.Zero, 0.1f);
+        body.InWater.ShouldBeFalse();
+
+        body.Position = new Vector3(5, 0, 4);
+        body.Grounded = false;
+        Run(mover, ref body, Vector2.Zero, 2);
+
+        count.ShouldBe(2);
+    }
+
     [Fact]
     public void Rescue_avoids_spots_inside_walls()
     {

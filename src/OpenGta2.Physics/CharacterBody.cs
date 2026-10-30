@@ -12,6 +12,11 @@ public struct CharacterBody
     public bool Grounded;
 
     /// <summary>
+    /// Whether the character is standing on a water surface.
+    /// </summary>
+    public bool InWater;
+
+    /// <summary>
     /// Height the character was at when it last left the ground. Used to detect (and recover from) endless falls.
     /// </summary>
     public float FallStartZ;

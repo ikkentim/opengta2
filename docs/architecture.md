@@ -56,6 +56,8 @@ Defined in `Controls.GetKey` (hard-coded for now):
 | Tab | Play a random sound (309/310) |
 | `+` / `-` | Override/cycle the ped animation frame number |
 | Numpad 4/6/8/2 | Free-camera pan; Numpad 7/9 zoom in/out; Numpad 0 re-attach to the player |
+| F3 | Sprite viewer (`SpritePreviewComponent`), starts as a grid of 8 x 8 sprites with their numbers (F7 cycles the remap palette of the current kind). PageUp/PageDown flip pages, Home/End jump to the first/last page. F6 switches between the grid and one large sprite (PageUp/PageDown step by 1, Home/End by 10, Enter plays on). F4 switches the kind (car, ped, code object, map object, user, font), F5 toggles additive blending. The numbers are what `GetSpriteTexture` takes. |
+| Numpad 5 | Teleport the player to the highest surface in the middle of the screen and re-attach the camera |
 
 ## Diagnostics
 
@@ -63,4 +65,4 @@ Defined in `Controls.GetKey` (hard-coded for now):
   Drawn only when F1 is on; the list is cleared after every draw (or every frame while F1 is off).
 - `DiagnosticValues.Set(key, value)` – key/value lines in the on-screen debug text.
 - `PerformanceCounters.Drawing` – named timing measurements shown on screen.
-- Collision currently also spams `Debug.WriteLine` on hits.
+- The player debug text shows the cell, the blocks in the column, the physics surfaces at the player and the last fall rescue.

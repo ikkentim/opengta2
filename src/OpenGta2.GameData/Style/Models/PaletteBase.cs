@@ -18,7 +18,7 @@ public struct PaletteBase
     public int SpriteOffset => Tile;
     public int CarRemapOffset => SpriteOffset + Sprite;
     public int PedRemapOffset => CarRemapOffset + CarRemap;
-    public int CodeObjRemapOffset => PedRemapOffset + CodeObjRemap;
+    public int CodeObjRemapOffset => PedRemapOffset + PedRemap;
     public int MapObjRemapOffset => CodeObjRemapOffset + CodeObjRemap;
     public int UserRemapOffset => MapObjRemapOffset + MapObjRemap;
     public int FontRemapOffset => UserRemapOffset + UserRemap;
