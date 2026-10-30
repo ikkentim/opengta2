@@ -5,6 +5,7 @@ using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Peds;
 using OpenGta2.Client.Utilities;
+using OpenGta2.Physics;
 
 namespace OpenGta2.Client.Components;
 
@@ -16,6 +17,7 @@ public class PlayerControllerComponent : BaseComponent
     private readonly Camera _camera;
     private Ped? _player;
     private bool _moveSlow;
+    private CharacterMover? _mover;
     public PlayerControllerComponent(GtaGame game, Controls controls, PedManager pedManager, LevelProvider levelProvider, Camera camera) : base(game)
     {
         _controls = controls;
@@ -26,7 +28,7 @@ public class PlayerControllerComponent : BaseComponent
 
     public override void Initialize()
     {
-        _player = new Ped(new Vector3(11.5f, 2.5f, _levelProvider.Map.GetGroundZ(12, 2)), 0, 25);
+        _player = new Ped(new Vector3(11.5f, 2.5f, _levelProvider.Map.GetGroundZ(11, 2) + 0.01f), 0, 25);
         _pedManager.Peds.Add(_player);
         _camera.Attach(_player);
     }
@@ -60,12 +62,13 @@ public class PlayerControllerComponent : BaseComponent
         var heading = new Vector2(MathF.Sin(-_player.Rotation), MathF.Cos(-_player.Rotation));
         var delta = heading * fd * gameTime.GetDelta() * 2 * (_moveSlow ? 0.1f : 1);
 
-        const float playerWidth = 0.1f;//(18f / 64);
+        var radius = _player.Body.Radius;
+        DiagnosticHighlight.Add(_player.Position - new Vector3(radius, radius, 0), new Vector3(radius * 2, radius * 2, _player.Body.Height), Color.Blue);
 
-        DiagnosticHighlight.Add(_player.Position - new Vector3(playerWidth/2, playerWidth/2, 0), new Vector3(playerWidth, playerWidth, 1), Color.Blue);
-
-        // _player.Position += new Vector3(delta, 0);
-        _player.Position = _levelProvider.CollisionMap.CalculateMovement(_player.Position, playerWidth, delta);
+        var dt = gameTime.GetDelta();
+        _mover ??= new CharacterMover(_levelProvider.CollisionWorld);
+        _mover.Move(ref _player.Body, dt > 0 ? new System.Numerics.Vector2(delta.X, delta.Y) / dt : default, dt);
+        DiagnosticValues.Set("PlayerPos", $"{_player.Position.X:F2} {_player.Position.Y:F2} {_player.Position.Z:F2} grounded={_player.Body.Grounded}");
 
         _player.Animation = fd != 0 ? PedAnimation.Walking  : PedAnimation.Idle;
     }

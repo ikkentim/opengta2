@@ -47,7 +47,7 @@ Client extensions (`MapExtensions`): `GetBlock(IntVector3)`, `IsWall(cell, face)
 ### SlopeType
 67 values: 26° and 7° slopes in four directions (sub-steps `_1.._8`), 45° slopes, diagonal blocks, diagonal slopes,
 partial blocks (left/right/top/bottom/corners/centre), `SlopeAbove`. Currently only used by rendering (`SlopeGenerator`).
-**Collision ignores slopes, diagonals and partial blocks entirely**, and the player's Z is never adjusted to a slope's surface height.
+Collision uses the straight slopes (`SlopeHeight`) to compute walkable surface height; diagonals and partial blocks are still treated as full blocks (see [collision-design.md](collision-design.md)).
 
 ## What "solid" means in the data
 

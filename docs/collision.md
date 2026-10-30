@@ -1,4 +1,8 @@
-# Current collision (`CollisionMap.cs`)
+# Old collision (`CollisionMap.cs`) — REPLACED
+
+> **This describes the previous implementation, which has been deleted** (`CollisionMap`, `Line2D`, `LineSegment2D`).
+> The replacement is the `OpenGta2.Physics` project plus `Levels/MapCollisionWorld.cs`; see [collision-design.md](collision-design.md).
+> Kept as a record of what was wrong and why it was rewritten.
 
 Entry point: `CollisionMap.CalculateMovement(Vector3 point, float radius, Vector2 delta) : Vector3`.
 Created in `LevelProvider.LoadLevel`, used only by `PlayerControllerComponent`.

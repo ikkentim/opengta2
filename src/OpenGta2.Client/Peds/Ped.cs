@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using OpenGta2.Physics;
 
 namespace OpenGta2.Client.Peds;
 
@@ -6,14 +7,23 @@ public class Ped
 {
     private PedAnimation _animation;
 
+    /// <summary>
+    /// Movement state (position, grounded, ...). Moved by <see cref="OpenGta2.Physics.CharacterMover"/>.
+    /// </summary>
+    public CharacterBody Body;
+
     public Ped(Vector3 position, float rotation, int remap)
     {
-        Position = position;
+        Body = new CharacterBody(new System.Numerics.Vector3(position.X, position.Y, position.Z), radius: 0.15f);
         Rotation = rotation;
         Remap = remap;
     }
 
-    public Vector3 Position { get; set; }
+    public Vector3 Position
+    {
+        get => new(Body.Position.X, Body.Position.Y, Body.Position.Z);
+        set => Body.Position = new System.Numerics.Vector3(value.X, value.Y, value.Z);
+    }
     public float Rotation { get; set; }
     public int Remap { get; }
 
