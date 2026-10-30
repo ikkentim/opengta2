@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using OpenGta2.Client.Diagnostics;
@@ -66,10 +69,51 @@ public class PlayerControllerComponent : BaseComponent
         DiagnosticHighlight.Add(_player.Position - new Vector3(radius, radius, 0), new Vector3(radius * 2, radius * 2, _player.Body.Height), Color.Blue);
 
         var dt = gameTime.GetDelta();
-        _mover ??= new CharacterMover(_levelProvider.CollisionWorld);
+        if (_mover == null)
+        {
+            _mover = new CharacterMover(_levelProvider.CollisionWorld);
+            _mover.Rescued += (from, to) => DiagnosticValues.Set("LastRescue", $"{from.X:F2} {from.Y:F2} {from.Z:F2} -> {to.X:F2} {to.Y:F2} {to.Z:F2}");
+        }
+
         _mover.Move(ref _player.Body, dt > 0 ? new System.Numerics.Vector2(delta.X, delta.Y) / dt : default, dt);
-        DiagnosticValues.Set("PlayerPos", $"{_player.Position.X:F2} {_player.Position.Y:F2} {_player.Position.Z:F2} grounded={_player.Body.Grounded}");
+
+        UpdateDiagnostics(_player);
 
         _player.Animation = fd != 0 ? PedAnimation.Walking  : PedAnimation.Idle;
+    }
+
+    /// <summary>
+    /// Shows where the player is and what the collision code sees there: the blocks in the column and the surfaces derived from them.
+    /// </summary>
+    private void UpdateDiagnostics(Ped player)
+    {
+        var position = player.Position;
+        var cellX = (int)MathF.Floor(position.X);
+        var cellY = (int)MathF.Floor(position.Y);
+
+        DiagnosticValues.Set("PlayerPos", $"{position.X:F2} {position.Y:F2} {position.Z:F2} grounded={player.Body.Grounded} vz={player.Body.VelocityZ:F2}");
+
+        var map = _levelProvider.Map;
+        if (cellX < 0 || cellY < 0 || cellX >= map.Width || cellY >= map.Height) return;
+
+        DiagnosticValues.Set("Cell", $"{cellX},{cellY} at {position.X - cellX:F2},{position.Y - cellY:F2}");
+        DiagnosticHighlight.Add(new IntVector3(cellX, cellY, (int)MathF.Floor(position.Z)), Color.Yellow);
+
+        // blocks in this column, bottom to top: layer:slope type, L if it has a lid tile, ground type
+        var column = map.GetColumn(cellX, cellY);
+        var blocks = new System.Text.StringBuilder();
+        for (var z = column.Offset; z < column.Height; z++)
+        {
+            ref var block = ref map.CompressedMap.Blocks[column.Blocks[z - column.Offset]];
+            blocks.Append(CultureInfo.InvariantCulture, $"[z{z} {block.SlopeType.SlopeType} {(block.Lid.TileGraphic != 0 ? "lid" : "nolid")} {block.SlopeType.GroundType}] ");
+        }
+
+        DiagnosticValues.Set("Blocks", blocks.ToString());
+
+        // surfaces as seen by the physics code at the exact position
+        var surfaces = new List<OpenGta2.Physics.Surface>();
+        _levelProvider.CollisionWorld.GetSurfaces(position.X, position.Y, surfaces);
+        DiagnosticValues.Set("Surfaces", string.Join(" ", surfaces.Select(s =>
+            string.Create(CultureInfo.InvariantCulture, $"[h={s.Height:F2} head={(float.IsInfinity(s.Headroom) ? "inf" : s.Headroom.ToString("F2", CultureInfo.InvariantCulture))}{(s.Standable ? "" : " nostand")}]"))));
     }
 }

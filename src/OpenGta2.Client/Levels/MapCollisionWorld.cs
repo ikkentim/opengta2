@@ -11,7 +11,7 @@ namespace OpenGta2.Client.Levels;
 /// </summary>
 /// <remarks>
 /// Walls come from the <c>Wall</c> flag of block side faces, plus the outline of partial and diagonal blocks (see <see cref="BlockShape"/>).
-/// Surfaces are the tops of blocks with a lid tile, following slopes and diagonal slopes.
+/// Surfaces are the tops of blocks with a lid tile and a ground type other than air, following slopes and diagonal slopes.
 /// </remarks>
 public class MapCollisionWorld : ICollisionWorld
 {
@@ -77,6 +77,10 @@ public class MapCollisionWorld : ICollisionWorld
             ref var block = ref _map.CompressedMap.Blocks[column.Blocks[z - column.Offset]];
             if (block.Lid.TileGraphic == 0) continue;
 
+            // ground type air means there is nothing solid in this block, whatever its lid tile looks like:
+            // it is neither something to walk on nor something that blocks the head of a character below it
+            if (block.SlopeType.GroundType == GroundType.Air) continue;
+
             if (!float.IsNaN(previousHeight))
             {
                 // headroom of the previous surface is the gap up to the (flat) underside of this block
@@ -88,8 +92,8 @@ public class MapCollisionWorld : ICollisionWorld
             if (!blockHeight.HasValue) continue;
 
             var height = z + blockHeight.Value;
-            // blocks on the bottom layer are water, and blocks with ground type air are mostly roofs
-            previousStandable = z > 0 && block.SlopeType.GroundType != GroundType.Air;
+            // blocks on the bottom layer are water
+            previousStandable = z > 0;
             results.Add(new Surface(height, float.PositiveInfinity, previousStandable));
             previousHeight = height;
         }

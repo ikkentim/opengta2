@@ -42,7 +42,7 @@ Client extensions (`MapExtensions`): `GetBlock(IntVector3)`, `IsWall(cell, face)
 | 14–15 | `Rotation` | 0/90/180/270 |
 
 ### GroundType
-`Air, Road, Pavement, Field`. Per the format spec, `Air` means "nothing solid" and the bottom layer (z=0) is automatically water. In `bil.gmp` lid blocks with `Air` are common (11,595 of ~85,000) and are mostly roofs; many "building top" blocks are `Field`. Collision only uses it to decide which surfaces are standable (see [collision-design.md](collision-design.md)).
+`Air, Road, Pavement, Field`. Per the format spec, `Air` means "nothing solid" and the bottom layer (z=0) is automatically water. In `bil.gmp` lid blocks with `Air` are common (11,595 of ~85,000): building roofs, slopes and decorations. Collision treats them as not there: no surface and no ceiling (see [collision-design.md](collision-design.md)). Many "building top" blocks are `Field` and do count as solid.
 
 ### SlopeType
 67 values: 26° and 7° slopes in four directions (sub-steps `_1.._8`), 45° slopes, diagonal blocks, diagonal slopes,
