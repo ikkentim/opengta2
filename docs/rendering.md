@@ -28,3 +28,13 @@ Moving the free camera with the numpad detaches it. FOV is `PiOver4`; the far pl
 ## Text
 
 `FontRenderer` draws GTA2 style-font sprites in screen space. The debug text uses a MonoGame `SpriteFont`.
+
+## Animated tiles
+
+The map lists tile animations (water, neon signs, ...): a base tile, the tiles to show in turn, and how many game frames each is shown for
+(see [format-notes.md](format-notes.md)). `TileAnimator` (owned by `LevelProvider`, updated from `MapComponent.Update`) plays them:
+every game frame it works out which frame of each animation is due (`TileAnimation.GetFrameIndex`) and, when it changes, copies the
+pixels of that frame's tile into the slot of the base tile in the tile texture array (`StyleTextureSet.CopyTile`). The map geometry is
+never touched; blocks keep using the base tile number. A game frame is 1/26.6 s by default (`TileAnimator.GameFramesPerSecond`, tunable in the game with F8/F9). That rate was measured from a recording of the original game on `bil` (the 12-frame water, 3 game frames per frame, advanced every 112.8 ms over 197 steps). Fan reports say the
+game runs at about 30 frames per second, 50 in the "fast" mode of some versions). Animations with a limited repeat count stop on their
+last frame. `bil` has 16 animations, `ste` 14 and `wil` 11.

@@ -10,6 +10,7 @@ public class StyleTextureSet
     private readonly GraphicsDevice _graphicsDevice;
     private readonly Style _style;
     private readonly uint[] _buffer = new uint[256 * 256];
+    private readonly uint[] _tileBuffer = new uint[Tile.Width * Tile.Height];
     private readonly Dictionary<(SpriteKind kind, ushort number, int remap), Texture2D> _sprites = new(); // TODO: Disposing
 
     private StyleTextureSet(Texture2D tilesTexture, GraphicsDevice graphicsDevice, Style style)
@@ -97,24 +98,49 @@ public class StyleTextureSet
 
         for (ushort tileNumber = 0; tileNumber < tileCount; tileNumber++)
         {
-            // don't need to add a base for virtual palette number - base for tiles is always 0.
-            var physicalPaletteNumber = style.PaletteIndex.PhysPalette[tileNumber];
-            var palette = style.PhysicsalPalette.GetPalette(physicalPaletteNumber);
-
-            var tile = style.Tiles.GetTile(tileNumber);
-            
-            for (byte y = 0; y < Tile.Height; y++)
-            {
-                for (byte x = 0; x < Tile.Width; x++)
-                {
-                    tileData[y * Tile.Width + x] = GetPaletteColor(ref palette, tile[y, x]);
-                }
-            }
+            FillTileColors(style, tileNumber, tileData);
 
             result.SetData(0, tileNumber, null, tileData, 0, tileData.Length);
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Converts the pixels of a tile to colors.
+    /// </summary>
+    private static void FillTileColors(Style style, int tileNumber, uint[] buffer)
+    {
+        // don't need to add a base for virtual palette number - base for tiles is always 0.
+        var physicalPaletteNumber = style.PaletteIndex.PhysPalette[tileNumber];
+        var palette = style.PhysicsalPalette.GetPalette(physicalPaletteNumber);
+
+        var tile = style.Tiles.GetTile(tileNumber);
+
+        for (byte y = 0; y < Tile.Height; y++)
+        {
+            for (byte x = 0; x < Tile.Width; x++)
+            {
+                buffer[y * Tile.Width + x] = GetPaletteColor(ref palette, tile[y, x]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Replaces the graphics of tile <paramref name="targetTile"/> in <see cref="TilesTexture"/> with those of
+    /// <paramref name="sourceTile"/>. This is how animated tiles work: the map keeps using the base tile of the animation
+    /// and the texture of that tile changes. The style itself is not modified.
+    /// </summary>
+    public void CopyTile(int targetTile, int sourceTile)
+    {
+        var tileCount = _style.Tiles.TileCount;
+        if (targetTile < 0 || targetTile >= tileCount || sourceTile < 0 || sourceTile >= tileCount)
+        {
+            return;
+        }
+
+        FillTileColors(_style, sourceTile, _tileBuffer);
+        TilesTexture.SetData(0, targetTile, null, _tileBuffer, 0, _tileBuffer.Length);
     }
 
     private static uint GetPaletteColor(ref Palette palette, byte colorEntry)

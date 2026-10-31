@@ -56,6 +56,7 @@ Defined in `Controls.GetKey` (hard-coded for now):
 | Tab | Play a random sound (309/310) |
 | `+` / `-` | Override/cycle the ped animation frame number |
 | Numpad 4/6/8/2 | Free-camera pan; Numpad 7/9 zoom in/out; Numpad 0 re-attach to the player |
+| F8 / F9 | Slow down / speed up the tile animations by 2 game frames per second (default 26.6, measured from the original); the debug text shows the value |
 | F3 | Sprite viewer (`SpritePreviewComponent`), starts as a grid of 8 x 8 sprites with their numbers (F7 cycles the remap palette of the current kind). PageUp/PageDown flip pages, Home/End jump to the first/last page. F6 switches between the grid and one large sprite (PageUp/PageDown step by 1, Home/End by 10, Enter plays on). F4 switches the kind (car, ped, code object, map object, user, font), F5 toggles additive blending. The numbers are what `GetSpriteTexture` takes. |
 | Numpad 5 | Teleport the player to the highest surface in the middle of the screen and re-attach the camera |
 

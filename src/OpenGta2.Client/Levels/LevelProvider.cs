@@ -30,6 +30,7 @@ public class LevelProvider
     private int _maxChunksY;
     private Map? _map;
     private StyleTextureSet? _textures;
+    private TileAnimator? _tileAnimator;
     private Style? _style;
     private MapCollisionWorld? _collisionWorld;
 
@@ -43,6 +44,8 @@ public class LevelProvider
     public MapCollisionWorld CollisionWorld => _collisionWorld ?? throw ThrowHelper.GetLevelNotLoaded();
 
     public Style Style => _style ?? throw ThrowHelper.GetLevelNotLoaded();
+
+    public TileAnimator? TileAnimator => _tileAnimator;
 
     public StyleTextureSet Textures => _textures ?? throw ThrowHelper.GetLevelNotLoaded();
 
@@ -64,6 +67,7 @@ public class LevelProvider
             _map = mapreader.Read();
             _style = styleReader.Read();
             _textures = StyleTextureSet.Create(_style, _graphicsDevice);
+            _tileAnimator = new TileAnimator(_map.Animations, _textures);
 
             _maxChunksX = (int)Math.Ceiling(Map.Width / (float)ChunkSize);
             _maxChunksY = (int)Math.Ceiling(Map.Height / (float)ChunkSize);
@@ -83,11 +87,20 @@ public class LevelProvider
         _map = null;
         _style = null;
         _textures = null;
+        _tileAnimator = null;
     }
 
     public IEnumerable<RenderableMapChunk> GetRenderableChunks()
     {
         return _chunks.Values;
+    }
+
+    /// <summary>
+    /// Plays the tile animations (water, neon signs, ...) for the specified time since the last call.
+    /// </summary>
+    public void UpdateAnimations(double deltaSeconds)
+    {
+        _tileAnimator?.Update(deltaSeconds);
     }
 
     public void Update(Camera camera)

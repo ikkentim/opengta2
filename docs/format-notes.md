@@ -16,16 +16,16 @@ Older web versions of the same specs: see [`/gtadocs.md`](../gtadocs.md).
 - **Tile animation** (chunk `ANIM`): `base` tile marks an animating tile; `frame_rate` is the number of **game frames** each
   animation frame is shown for (so it is a delay, not a speed); `repeat` is how many times it plays (0 = forever);
   `anim_length` tiles follow. Example from `ste.gmp`: water, base 608, 12 frames (608-619), frame_rate 5. If the game runs
-  at 30 game frames per second that is 6 water frames per second (the documents don't state the game frame rate).
-  Our renderer does not play tile animations yet.
+  at 30 game frames per second that is 6 water frames per second. The documents do not state the game frame rate; community reports say about 30, and a recording of the original on `bil` (water frame_rate 3) shows a step every 112.8 ms, i.e. 26.6 game frames per second.
+  Our renderer plays them: see [rendering.md](rendering.md).
 - **Lights** use `on_time`/`off_time` in game cycles, with a random `shape` variance.
 
 ## Style format
 
 - Tile numbers 0-991 are real tiles; **992-1023 are used internally by the game** ("for asynchronous animation").
 - **Code objects** (the document names blood and skidmarks as examples) are only placed by code, so the style file stores no
-  information about them: no list of which sprite is what, no frame counts. The meaning of code object sprite numbers (for
-  example the burst sprites around 327-345 that look like a water splash) can only be found out by looking at the original game.
+  information about them: no list of which sprite is what, no frame counts. The meaning of code object sprite numbers can only be found
+  out by looking at the original game (the burst sprites 327-345 are the explosion fireball; no water splash sprite exists, see [ped-sprites.md](ped-sprites.md)).
 - Map objects (bins, hot dog stands, ...) have a model number and a sprite count (`object_info`).
 - Sprites are 256 colour, at most 128x64, at least 2x2, even sizes. Deltas modify sprites (car dents, doors, lights).
 - The sprite number of a game item is its relative number plus the cumulative base for its kind (car, ped, code object, map object, user, font).

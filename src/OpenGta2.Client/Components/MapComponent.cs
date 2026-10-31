@@ -6,6 +6,7 @@ using OpenGta2.Client.Assets.Effects;
 using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Rendering;
+using OpenGta2.Client.Utilities;
 
 namespace OpenGta2.Client.Components;
 
@@ -33,12 +34,29 @@ public class MapComponent : BaseDrawableComponent
     public override void Update(GameTime gameTime)
     {
         _levelProvider.Update(_camera);
+        _levelProvider.UpdateAnimations(gameTime.GetDelta());
+        TuneAnimationSpeed();
 
         if (_controls.IsKeyDown(Keys.OemTilde))
         {
             _noon = !_noon;
             _blockFaceEffect!.AmbientLevel = _noon ? 1 : 0.3f;
         }
+    }
+
+    /// <summary>
+    /// Debug: F8/F9 slow down or speed up the tile animations (in steps of 2 game frames per second) to find out which speed
+    /// matches the original game.
+    /// </summary>
+    private void TuneAnimationSpeed()
+    {
+        var animator = _levelProvider.TileAnimator;
+        if (animator == null) return;
+
+        if (_controls.IsKeyDown(Keys.F8)) animator.GameFramesPerSecond = Math.Max(2, animator.GameFramesPerSecond - 2);
+        if (_controls.IsKeyDown(Keys.F9)) animator.GameFramesPerSecond = Math.Min(120, animator.GameFramesPerSecond + 2);
+
+        DiagnosticValues.Set("TileAnimation", $"{animator.GameFramesPerSecond:F1} game frames/s ({animator.AnimationCount} animations)");
     }
 
     public override void Draw(GameTime gameTime)
