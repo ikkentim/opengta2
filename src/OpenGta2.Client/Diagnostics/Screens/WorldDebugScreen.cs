@@ -26,9 +26,16 @@ public class WorldDebugScreen : IDebugScreen
 
     public IReadOnlyList<DebugKey> HelpKeys { get; } = new DebugKey[]
     {
+        new("N", "lighting: dusk / noon (also ~)"),
+        new("A", "flat faces (power lines, fences): alpha blend / alpha test 0.5"),
         new("F5", "collision boxes on / off"),
         new("F6", "slow player (x0.1) on / off"),
         new("F7 / F8", "tile animations slower / faster (2 game frames per second)"),
+        new("F9", "map textures: point / bilinear sampling"),
+        new("S", "bilinear filtering: smooth / sharp (crisp texels, blended over one screen pixel)"),
+        new("F11","map textures: clamp / wrap at tile edges"),
+        new("F12", "tile mapping: normal / shared edge texel on flat faces / on all faces"),
+        new("F10", "outlines of the transparent (flat) faces on / off"),
         new("Numpad 5", "teleport the player to the highest point at the screen centre"),
     };
 
@@ -44,8 +51,15 @@ public class WorldDebugScreen : IDebugScreen
 
     public void Update(GameTime gameTime)
     {
+        if (_controls.IsKeyDown(Keys.N)) _settings.Noon = !_settings.Noon;
+        if (_controls.IsKeyDown(Keys.A)) _settings.FlatAlphaTest = !_settings.FlatAlphaTest;
+        if (_controls.IsKeyDown(Keys.S)) _settings.SharpTexels = !_settings.SharpTexels;
         if (_controls.IsKeyDown(Keys.F5)) _settings.ShowHighlights = !_settings.ShowHighlights;
         if (_controls.IsKeyDown(Keys.F6)) _settings.SlowPlayer = !_settings.SlowPlayer;
+        if (_controls.IsKeyDown(Keys.F9)) _settings.PointSampling = !_settings.PointSampling;
+        if (_controls.IsKeyDown(Keys.F11)) _settings.WrapSampling = !_settings.WrapSampling;
+        if (_controls.IsKeyDown(Keys.F12)) _settings.TileSpan = _settings.TileSpan == TileSpan.SharedEdgeAll ? TileSpan.Full : _settings.TileSpan + 1;
+        if (_controls.IsKeyDown(Keys.F10)) _settings.ShowFlatOutlines = !_settings.ShowFlatOutlines;
 
         var animator = _levelProvider.TileAnimator;
         if (animator != null)
@@ -63,6 +77,6 @@ public class WorldDebugScreen : IDebugScreen
 
     private void Show()
     {
-        DiagnosticValues.Set("Debug", $"collision boxes {(_settings.ShowHighlights ? "on" : "off")}, slow player {(_settings.SlowPlayer ? "on" : "off")}");
+        DiagnosticValues.Set("Debug", $"{(_settings.Noon ? "noon" : "dusk")}, flats {(_settings.FlatAlphaTest ? "alpha test" : "blended")}, collision boxes {(_settings.ShowHighlights ? "on" : "off")}, slow player {(_settings.SlowPlayer ? "on" : "off")}, {(_settings.PointSampling ? "point" : _settings.SharpTexels ? "sharp bilinear" : "bilinear")} sampling, {(_settings.WrapSampling ? "wrap" : "clamp")}, tile span {_settings.TileSpan}");
     }
 }

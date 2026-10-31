@@ -16,10 +16,16 @@ public class MapComponent : BaseDrawableComponent
     private readonly LevelProvider _levelProvider;
     private readonly Controls _controls;
     private BlockFaceEffect? _blockFaceEffect;
-    private bool _noon;
 
-    public MapComponent(GtaGame game, Camera camera, LevelProvider levelProvider, Controls controls) : base(game)
+    private const float DuskAmbientLevel = 0.3f;
+    private const float NoonAmbientLevel = 1f;
+
+    private readonly DebugSettings _debugSettings;
+    private static readonly RasterizerState _wireframe = new() { FillMode = FillMode.WireFrame, CullMode = CullMode.None };
+
+    public MapComponent(GtaGame game, Camera camera, LevelProvider levelProvider, Controls controls, DebugSettings debugSettings) : base(game)
     {
+        _debugSettings = debugSettings;
         _camera = camera;
         _levelProvider = levelProvider;
         _controls = controls;
@@ -37,11 +43,13 @@ public class MapComponent : BaseDrawableComponent
         _levelProvider.UpdateAnimations(gameTime.GetDelta());
         ShowAnimationSpeed();
 
+        // the ~ key is a shortcut for the switch in the world debug screen
         if (_controls.IsKeyDown(Keys.OemTilde))
         {
-            _noon = !_noon;
-            _blockFaceEffect!.AmbientLevel = _noon ? 1 : 0.3f;
+            _debugSettings.Noon = !_debugSettings.Noon;
         }
+
+        _blockFaceEffect!.AmbientLevel = _debugSettings.Noon ? NoonAmbientLevel : DuskAmbientLevel;
     }
 
     /// <summary>
@@ -59,7 +67,31 @@ public class MapComponent : BaseDrawableComponent
     {
         Span<Light> lights = stackalloc Light[BlockFaceEffect.MaxLights];
 
-        _blockFaceEffect!.View = _camera.ViewMatrix;
+        // always clamp: with wrapping, bilinear filtering at the edge of a tile blends in the opposite edge of the same tile.
+        // Even clamped, bilinear filtering is flat for the last half texel at a tile edge, which bends diagonal lines (power lines)
+        // a little where one tile ends and the next begins; point sampling is exact.
+        Game.GraphicsDevice.SamplerStates[0] = (_debugSettings.PointSampling, _debugSettings.WrapSampling) switch
+        {
+            (true, true) => SamplerState.PointWrap,
+            (true, false) => SamplerState.PointClamp,
+            (false, true) => SamplerState.LinearWrap,
+            _ => SamplerState.LinearClamp
+        };
+
+        _blockFaceEffect!.SetFlatCutoff(_debugSettings.FlatAlphaTest ? 0.5f : 0.05f);
+        _blockFaceEffect.SetSharpTexels(_debugSettings.SharpTexels);
+
+        const float scale = 63f / 64f;
+        const float half = 0.5f / 64f;
+        var normal = new Vector4(1, 1, 0, 0);
+
+        // the edges of a block are the centres of the first and last texel: neighbouring tiles share their edge texel
+        var sharedEdge = new Vector4(scale, scale, half, half);
+
+        _blockFaceEffect.SetTileUv(
+            _debugSettings.TileSpan == TileSpan.SharedEdgeAll ? sharedEdge : normal,
+            _debugSettings.TileSpan is TileSpan.SharedEdgeAll or TileSpan.SharedEdgeFlat ? sharedEdge : normal);
+        _blockFaceEffect.View = _camera.ViewMatrix;
         _blockFaceEffect.Projection = _camera.Projection;
 
         PerformanceCounters.Drawing.StartMeasurement("DrawOpaque");
@@ -91,8 +123,39 @@ public class MapComponent : BaseDrawableComponent
         
         PerformanceCounters.Drawing.StopMeasurement();
 
+        if (_debugSettings.ShowFlatOutlines)
+        {
+            DrawFlatOutlines();
+        }
 
         base.Draw(gameTime);
+    }
+
+    /// <summary>
+    /// Debug: draws the triangles of the flat faces as magenta lines on top of the map, to see where the geometry of transparent textures is.
+    /// </summary>
+    private void DrawFlatOutlines()
+    {
+        var rasterizer = Game.GraphicsDevice.RasterizerState;
+        var depth = Game.GraphicsDevice.DepthStencilState;
+        var blend = Game.GraphicsDevice.BlendState;
+        Game.GraphicsDevice.RasterizerState = _wireframe;
+        Game.GraphicsDevice.DepthStencilState = DepthStencilState.None;
+        Game.GraphicsDevice.BlendState = BlendState.Opaque;
+
+        foreach (var chunk in _levelProvider.GetRenderableChunks())
+        {
+            if (chunk.FlatPrimitiveCount == 0) continue;
+
+            ApplyChunk(chunk);
+
+            _blockFaceEffect!.CurrentTechnique.Passes["Outline"].Apply();
+            Game.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, chunk.FlatIndexOffset, chunk.FlatPrimitiveCount);
+        }
+
+        Game.GraphicsDevice.RasterizerState = rasterizer;
+        Game.GraphicsDevice.DepthStencilState = depth;
+        Game.GraphicsDevice.BlendState = blend;
     }
 
     private void ApplyChunk(RenderableMapChunk chunk)
@@ -105,7 +168,7 @@ public class MapComponent : BaseDrawableComponent
 
     private Span<Light> CollectLights(Span<Light> buffer, Point chunkLocation)
     {
-        if (_noon)
+        if (_debugSettings.Noon)
         {
             return buffer[..0];
         }

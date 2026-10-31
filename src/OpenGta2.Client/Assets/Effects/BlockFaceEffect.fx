@@ -22,6 +22,10 @@ float LightIntensities[MAX_LIGHTS];
 int LightCount = 0;
 
 float AmbientLevel = 0.3;
+float4 TileUv = float4(1, 1, 0, 0); // debug: tile coordinates are scaled by xy and then offset by zw
+float4 FlatTileUv = float4(1, 1, 0, 0); // the same, for flat (transparent) faces
+float FlatCutoff = 0.05; // flat faces: pixels with an alpha below this are dropped; at 0.5 or more it is an alpha test (the surviving pixels are opaque)
+float SharpTexels = 0; // 1: sharp bilinear filtering (use with a linear sampler)
 float ShadingLevel = 15;
 
 struct VertexShaderInput
@@ -68,13 +72,31 @@ VertexShaderOutput MainVS(const in VertexShaderInput input)
 
 float4 MainPS(const in VertexShaderOutput input, bool flatPass) : COLOR
 {
-    float4 color = Tiles.Sample(TilesSampler, input.TexCoord);
+    const float4 tileUv = flatPass ? FlatTileUv : TileUv;
+    float2 uv = input.TexCoord.xy * tileUv.xy + tileUv.zw;
+
+    if (SharpTexels > 0)
+    {
+        // "sharp bilinear": every texel stays flat in its middle and is blended with its neighbours only over about one screen pixel
+        // at the boundary (a screen pixel is fwidth(t) texels). Magnified like this it looks crisp without the stair-steps of point sampling.
+        const float2 t = uv * 64.0;
+        const float2 pixelInTexels = fwidth(t);
+        const float2 region = saturate(0.5 - 0.5 * pixelInTexels);
+        const float2 p = floor(t) + clamp(t - floor(t), region, 1 - region);
+        uv = p / 64.0;
+    }
+
+    float4 color = Tiles.Sample(TilesSampler, float3(uv, input.TexCoord.z));
 
     // apply transparency in flat pass
     if (flatPass)
     {
         // clip transparent pixels as not to fill depth buffer
-        clip(color.a - 0.05);
+        clip(color.a - FlatCutoff);
+        if (FlatCutoff >= 0.5)
+        {
+            color.a = 1;
+        }
     }
     
     // apply shading
@@ -101,6 +123,12 @@ float4 FlatPS(const in VertexShaderOutput input) : COLOR
     return MainPS(input, true);
 }
 
+float4 OutlinePS(const in VertexShaderOutput input) : COLOR
+{
+    // debug: solid colour, used with a wireframe rasterizer to show where the geometry of a face is
+    return float4(1, 0, 1, 1);
+}
+
 technique Faces
 {
     pass Opaque
@@ -113,5 +141,10 @@ technique Faces
         AlphaBlendEnable = TRUE;
         VertexShader = compile VS_SHADERMODEL MainVS();
         PixelShader = compile PS_SHADERMODEL FlatPS();
+    }
+    pass Outline
+    {
+        VertexShader = compile VS_SHADERMODEL MainVS();
+        PixelShader = compile PS_SHADERMODEL OutlinePS();
     }
 };

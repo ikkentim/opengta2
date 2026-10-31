@@ -34,6 +34,7 @@ public class TestWorldScene : Scene
         var debugMenu = new DebugMenuComponent(Game, Game.Services.GetService<Controls>());
         debugMenu.Add<WorldDebugScreen>();
         debugMenu.Add<SpriteDebugScreen>();
+        debugMenu.Add<TileDebugScreen>();
         debugMenu.Add<SoundDebugScreen>();
         Game.Components.Add(debugMenu);
     }

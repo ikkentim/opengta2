@@ -54,8 +54,9 @@ Screens use F5 and up (F1-F4 belong to the menu).
 
 | Screen | Keys |
 |--------|------|
-| World and player (`WorldDebugScreen`) | F5 collision boxes (`DebugSettings.ShowHighlights`), F6 slow player x0.1 (`DebugSettings.SlowPlayer`), F7/F8 tile animations slower/faster by 2 game frames per second (default 26.6, measured from the original), Numpad 5 teleport (works everywhere) |
+| World and player (`WorldDebugScreen`) | N dusk/noon lighting, S sharp bilinear filtering (`DebugSettings.SharpTexels`, crisp texels blended over one screen pixel; needs point sampling off), A flat faces alpha blend / alpha test 0.5 (`DebugSettings.FlatAlphaTest`), F5 collision boxes (`DebugSettings.ShowHighlights`), F6 slow player x0.1 (`DebugSettings.SlowPlayer`), F7/F8 tile animations slower/faster by 2 game frames per second (default 26.6, measured from the original), F9 map textures point/bilinear sampling (`DebugSettings.PointSampling`, default bilinear; see the power line notes in rendering.md), F11 clamp/wrap at tile edges (`DebugSettings.WrapSampling`, default clamp), F12 tile mapping, default SharedEdgeAll, cycles Full / SharedEdgeFlat (flat faces only) / SharedEdgeAll (`DebugSettings.TileSpan`), F10 outlines of the transparent (flat) faces in magenta (`DebugSettings.ShowFlatOutlines`), Numpad 5 teleport (works everywhere) |
 | Sprites (`SpriteDebugScreen`) | grid of 8 x 8 sprites with numbers: PageUp/PageDown flip pages, Home/End first/last page; F5 grid/single sprite (PageUp/PageDown step by 1, Home/End by 10, Enter plays on); F6 kind (car, ped, code object, map object, user, font); F7 additive blending; F8 remap palette. The numbers are what `GetSpriteTexture` takes. |
+| Tiles (`TileDebugScreen`) | the 64 x 64 surface textures as the map uses them (animated tiles show their current frame), transparent pixels magenta: grid of 8 x 8 with numbers, PageUp/PageDown flip pages, Home/End first/last page; F5 grid/single tile at 8x (PageUp/PageDown step by 1, Home/End by 10); F6 texel grid |
 | Sounds (`SoundDebugScreen`) | lists the sound bank entries of the level (length, sample rate, pitch variation, loop start). PageUp/PageDown select, Home/End jump 10, Enter plays, K stops, L toggles looping |
 
 To add a screen: implement `IDebugScreen` (the constructor takes services like a component) and register it in `TestWorldScene` with `debugMenu.Add<T>()`.
@@ -64,7 +65,7 @@ Other keys, always active:
 
 | Key | Effect |
 |-----|--------|
-| `~` (OemTilde) | Toggle "noon" lighting (ambient 1.0, point lights off) |
+| `~` (OemTilde) | Shortcut for the dusk/noon switch (`DebugSettings.Noon`, also N in the World and player debug screen): noon = ambient 1.0, point lights off; dusk (default) is what the original shows |
 | Tab | Play a random sound (309/310) |
 | `+` / `-` | Override/cycle the ped animation frame number |
 | Numpad 4/6/8/2 | Free-camera pan; Numpad 7/9 zoom in/out; Numpad 0 re-attach to the player |

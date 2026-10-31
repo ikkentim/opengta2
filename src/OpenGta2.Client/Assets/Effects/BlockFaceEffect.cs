@@ -74,6 +74,25 @@ public class BlockFaceEffect : Effect, IEffectMatrices
     }
 
     /// <summary>
+    /// Debug: transforms the tile coordinates: u and v are scaled by x and y and then offset by z and w, separately for solid faces and for flat (transparent) faces.
+    /// </summary>
+    public void SetTileUv(Vector4 scaleAndOffset, Vector4 flatScaleAndOffset)
+    {
+        Parameters["TileUv"].SetValue(scaleAndOffset);
+        Parameters["FlatTileUv"].SetValue(flatScaleAndOffset);
+    }
+
+    /// <summary>
+    /// Debug: the alpha below which pixels of flat faces are dropped. 0.5 or more makes it an alpha test with opaque pixels.
+    /// </summary>
+    public void SetFlatCutoff(float cutoff) => Parameters["FlatCutoff"].SetValue(cutoff);
+
+    /// <summary>
+    /// Debug: sharp bilinear filtering of the tiles (crisp texels, blended over about one screen pixel at texel boundaries). Needs a linear sampler.
+    /// </summary>
+    public void SetSharpTexels(bool sharp) => Parameters["SharpTexels"].SetValue(sharp ? 1f : 0f);
+
+    /// <summary>
     /// Ambient light level. 0.0 is black, 1.0 is ‘normal’ GTA without light. 0.3 is 'dusk' on Industrial map.
     /// </summary>
     public float AmbientLevel
