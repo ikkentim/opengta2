@@ -70,7 +70,7 @@ so the numbering may be off by one). **This mapping is unverified.**
 
 ## Sound viewer
 
-F10 in the client opens the sound viewer (`SoundViewerComponent`): all 320 entries of the level bank with length, sample rate, pitch variation and loop start; Enter plays the selected one (L loops it, from the loop start where the entry has one; K stops). Use it with the original game to find which entry is which sound object type.
+The Sounds screen of the debug menu (F1, `SoundDebugScreen`) is the sound viewer: all 320 entries of the level bank with length, sample rate, pitch variation and loop start; Enter plays the selected one (L loops it, from the loop start where the entry has one; K stops). Use it with the original game to find which entry is which sound object type.
 
 ## Suggested next steps
 

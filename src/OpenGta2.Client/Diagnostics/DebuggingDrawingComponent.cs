@@ -11,14 +11,13 @@ namespace OpenGta2.Client.Diagnostics;
 public class DebuggingDrawingComponent : DrawableGameComponent
 {
     private readonly Camera _camera;
-    private readonly Controls _controls;
+    private readonly DebugSettings _settings;
     private readonly StringBuilder _stringBuilder = new();
 
     private readonly SpriteBatch _spriteBatch;
     private SpriteFont? _font;
     private DebugLineEffect? _debugLineEffect;
     private float _time;
-    private bool _drawDiagnostics;
 
     private static readonly VertexPositionColor[] _blockVertices =
     {
@@ -34,10 +33,10 @@ public class DebuggingDrawingComponent : DrawableGameComponent
 
     private static readonly short[] _blockIndices = { 0, 1, 1, 3, 3, 2, 2, 0, 0, 4, 1, 5, 3, 7, 2, 6, 4, 5, 5, 7, 7, 6, 6, 4 };
     
-    public DebuggingDrawingComponent(Game game, Camera camera, Controls controls) : base(game)
+    public DebuggingDrawingComponent(Game game, Camera camera, DebugSettings settings) : base(game)
     {
         _camera = camera;
-        _controls = controls;
+        _settings = settings;
         _spriteBatch = new SpriteBatch(GraphicsDevice);
     }
 
@@ -56,21 +55,13 @@ public class DebuggingDrawingComponent : DrawableGameComponent
         _debugLineEffect = Game.AssetManager.CreateDebugLineEffect();
     }
 
-    public override void Update(GameTime gameTime)
-    {
-        if (_controls.IsKeyDown(Keys.F1))
-        {
-            _drawDiagnostics = !_drawDiagnostics;
-        }
-    }
-
     public override void Draw(GameTime gameTime) => Draw(gameTime.GetDelta());
 
     public void Draw(float deltaTime)
     {
         PerformanceCounters.Drawing.StartMeasurement("Debug");
 
-        if (_drawDiagnostics)
+        if (_settings.ShowHighlights)
         {
             DrawDiagnosticHighlights();
         }

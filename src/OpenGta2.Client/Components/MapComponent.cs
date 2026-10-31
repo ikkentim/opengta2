@@ -35,7 +35,7 @@ public class MapComponent : BaseDrawableComponent
     {
         _levelProvider.Update(_camera);
         _levelProvider.UpdateAnimations(gameTime.GetDelta());
-        TuneAnimationSpeed();
+        ShowAnimationSpeed();
 
         if (_controls.IsKeyDown(Keys.OemTilde))
         {
@@ -45,16 +45,12 @@ public class MapComponent : BaseDrawableComponent
     }
 
     /// <summary>
-    /// Debug: F8/F9 slow down or speed up the tile animations (in steps of 2 game frames per second) to find out which speed
-    /// matches the original game.
+    /// Debug: shows the speed of the tile animations (tuned in the world debug screen).
     /// </summary>
-    private void TuneAnimationSpeed()
+    private void ShowAnimationSpeed()
     {
         var animator = _levelProvider.TileAnimator;
         if (animator == null) return;
-
-        if (_controls.IsKeyDown(Keys.F8)) animator.GameFramesPerSecond = Math.Max(2, animator.GameFramesPerSecond - 2);
-        if (_controls.IsKeyDown(Keys.F9)) animator.GameFramesPerSecond = Math.Min(120, animator.GameFramesPerSecond + 2);
 
         DiagnosticValues.Set("TileAnimation", $"{animator.GameFramesPerSecond:F1} game frames/s ({animator.AnimationCount} animations)");
     }

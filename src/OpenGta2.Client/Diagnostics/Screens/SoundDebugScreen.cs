@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Microsoft.Xna.Framework;
@@ -8,18 +9,18 @@ using Microsoft.Xna.Framework.Input;
 using OpenGta2.Client.Levels;
 using OpenGta2.GameData.Audio;
 
-namespace OpenGta2.Client.Components;
+namespace OpenGta2.Client.Diagnostics.Screens;
 
 /// <summary>
 /// Debug tool for finding out what the sounds in the sound bank of the level are: lists the entries and plays them.
 /// </summary>
 /// <remarks>
-/// F10 toggles the viewer (don't use it together with the sprite viewer: they share PageUp/PageDown/Home/End).
 /// PageUp/PageDown select the next/previous entry, Home/End jump 10 entries, Enter plays the selected entry (again: restarts it),
-/// L toggles looping (entries with a loop start play once and then repeat from there; the others repeat the whole sample), K stops. The list shows the entry number, length, sample rate, the random pitch variation
-/// and the loop start: the numbers are the indices <see cref="SoundLibrary.GetSound"/> takes.
+/// L toggles looping (entries with a loop start play once and then repeat from there; the others repeat the whole sample), K stops.
+/// The list shows the entry number, length, sample rate, the random pitch variation and the loop start: the numbers are the
+/// indices <see cref="SoundLibrary.GetSound"/> takes.
 /// </remarks>
-public class SoundViewerComponent : BaseDrawableComponent
+public class SoundDebugScreen : IDebugScreen
 {
     private const int VisibleRows = 24;
 
@@ -28,6 +29,7 @@ public class SoundViewerComponent : BaseDrawableComponent
     /// </summary>
     private const int MinimumSampleRate = 8000;
 
+    private readonly GtaGame _game;
     private readonly Controls _controls;
     private readonly LevelProvider _levelProvider;
     private SpriteBatch? _spriteBatch;
@@ -39,28 +41,45 @@ public class SoundViewerComponent : BaseDrawableComponent
     private string _loadedLevel = "";
     private string _error = "";
 
-    private bool _active;
     private bool _loop;
     private int _selected;
     private int _playing = -1;
     private SoundEffect? _effect;
     private SoundEffectInstance? _instance;
 
-    public SoundViewerComponent(GtaGame game, Controls controls, LevelProvider levelProvider) : base(game)
+    public SoundDebugScreen(GtaGame game, Controls controls, LevelProvider levelProvider)
     {
+        _game = game;
         _controls = controls;
         _levelProvider = levelProvider;
     }
 
-    protected override void LoadContent()
+    public string Name => "Sounds";
+
+    public IReadOnlyList<DebugKey> HelpKeys { get; } = new DebugKey[]
+    {
+        new("PgUp / PgDn", "select next / previous entry"),
+        new("Home / End", "select +-10 entries"),
+        new("Enter", "play"),
+        new("L", "loop (from the loop start where there is one)"),
+        new("K", "stop"),
+    };
+
+    private GraphicsDevice GraphicsDevice => _game.GraphicsDevice;
+
+    public void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _font = Game.AssetManager.GetDebugFont();
+        _font = _game.AssetManager.GetDebugFont();
         _pixel = new Texture2D(GraphicsDevice, 1, 1);
         _pixel.SetData(new[] { Color.White });
-
-        base.LoadContent();
     }
+
+    public void Opened()
+    {
+    }
+
+    public void Closed() => Stop();
 
     private void LoadBank()
     {
@@ -87,16 +106,8 @@ public class SoundViewerComponent : BaseDrawableComponent
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _entries.Length - 1));
     }
 
-    public override void Update(GameTime gameTime)
+    public void Update(GameTime gameTime)
     {
-        if (_controls.IsKeyDown(Keys.F10))
-        {
-            _active = !_active;
-            if (!_active) Stop();
-        }
-
-        if (!_active) return;
-
         if (_loadedLevel != _levelProvider.LevelName)
         {
             LoadBank();
@@ -207,10 +218,8 @@ public class SoundViewerComponent : BaseDrawableComponent
         _playing = -1;
     }
 
-    public override void Draw(GameTime gameTime)
+    public void Draw(GameTime gameTime)
     {
-        if (!_active) return;
-
         var viewport = GraphicsDevice.Viewport;
         var lineHeight = (int)_font!.MeasureString("A").Y + 2;
         var width = 760;
@@ -225,7 +234,6 @@ public class SoundViewerComponent : BaseDrawableComponent
         text.Append(CultureInfo.InvariantCulture, $"Sound bank '{_levelProvider.LevelName}' ({_entries.Length} entries)    loop: ");
         text.Append(_loop ? "ON (from the loop start where an entry has one)" : "off");
         _spriteBatch.DrawString(_font, text.ToString(), new Vector2(x, y), Color.White);
-        _spriteBatch.DrawString(_font, "PgUp/PgDn select   Home/End +-10   Enter play   K stop   L loop", new Vector2(x, y + lineHeight), Color.LightGray);
         if (_entries.Length > 0 && !string.IsNullOrEmpty(_error))
         {
             _spriteBatch.DrawString(_font, _error, new Vector2(x, y + lineHeight * 2), Color.OrangeRed);

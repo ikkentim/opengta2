@@ -12,7 +12,7 @@ public abstract class Scene : GameComponent
 
     public new GtaGame Game { get; }
 
-    public void AddComponent<T>() where T : IGameComponent
+    public void AddComponent<T>() where T : class, IGameComponent
     {
         var component = ComponentActivator<T>.Activate(Game);
         Game.Components.Add(component);

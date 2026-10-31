@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework;
 
 namespace OpenGta2.Client.Utilities;
 
-public static class ComponentActivator<T> where T : IGameComponent
+public static class ComponentActivator<T> where T : class
 {
     private static readonly Func<GtaGame, T> _activator = CreateFactory();
     

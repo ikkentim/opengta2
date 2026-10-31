@@ -48,23 +48,32 @@ Defined in `Controls.GetKey` (hard-coded for now):
 
 ## Debug keys
 
+F1 opens the debug menu (`DebugMenuComponent`); F2/F3 move up/down, F4 opens the selected screen, F1 goes back (and closes the menu).
+Every screen is an `IDebugScreen` (`Diagnostics/Screens/`) and the keys of the open screen are drawn at the bottom left of the window.
+Screens use F5 and up (F1-F4 belong to the menu).
+
+| Screen | Keys |
+|--------|------|
+| World and player (`WorldDebugScreen`) | F5 collision boxes (`DebugSettings.ShowHighlights`), F6 slow player x0.1 (`DebugSettings.SlowPlayer`), F7/F8 tile animations slower/faster by 2 game frames per second (default 26.6, measured from the original), Numpad 5 teleport (works everywhere) |
+| Sprites (`SpriteDebugScreen`) | grid of 8 x 8 sprites with numbers: PageUp/PageDown flip pages, Home/End first/last page; F5 grid/single sprite (PageUp/PageDown step by 1, Home/End by 10, Enter plays on); F6 kind (car, ped, code object, map object, user, font); F7 additive blending; F8 remap palette. The numbers are what `GetSpriteTexture` takes. |
+| Sounds (`SoundDebugScreen`) | lists the sound bank entries of the level (length, sample rate, pitch variation, loop start). PageUp/PageDown select, Home/End jump 10, Enter plays, K stops, L toggles looping |
+
+To add a screen: implement `IDebugScreen` (the constructor takes services like a component) and register it in `TestWorldScene` with `debugMenu.Add<T>()`.
+
+Other keys, always active:
+
 | Key | Effect |
 |-----|--------|
-| F1 | Toggle diagnostic highlights (collision debug boxes) – `DebuggingDrawingComponent` |
-| F2 | Toggle slow player movement (x0.1) – useful for stepping through collision |
 | `~` (OemTilde) | Toggle "noon" lighting (ambient 1.0, point lights off) |
 | Tab | Play a random sound (309/310) |
 | `+` / `-` | Override/cycle the ped animation frame number |
 | Numpad 4/6/8/2 | Free-camera pan; Numpad 7/9 zoom in/out; Numpad 0 re-attach to the player |
-| F10 | Sound viewer (`SoundViewerComponent`): lists the sound bank entries of the level (length, sample rate, pitch variation, loop start). PageUp/PageDown select, Home/End jump 10, Enter plays, K stops, L toggles looping. Don't use it together with the sprite viewer (they share PageUp/PageDown/Home/End). |
-| F8 / F9 | Slow down / speed up the tile animations by 2 game frames per second (default 26.6, measured from the original); the debug text shows the value |
-| F3 | Sprite viewer (`SpritePreviewComponent`), starts as a grid of 8 x 8 sprites with their numbers (F7 cycles the remap palette of the current kind). PageUp/PageDown flip pages, Home/End jump to the first/last page. F6 switches between the grid and one large sprite (PageUp/PageDown step by 1, Home/End by 10, Enter plays on). F4 switches the kind (car, ped, code object, map object, user, font), F5 toggles additive blending. The numbers are what `GetSpriteTexture` takes. |
 | Numpad 5 | Teleport the player to the highest surface in the middle of the screen and re-attach the camera |
 
 ## Diagnostics
 
 - `DiagnosticHighlight.Add(pos, scale, color)` – queue a wireframe box for this frame. `[Conditional("DEBUG")]`, so it vanishes in Release.
-  Drawn only when F1 is on; the list is cleared after every draw (or every frame while F1 is off).
+  Drawn only when the collision boxes are on (debug menu, World and player); the list is cleared after every draw (or every frame while they are off).
 - `DiagnosticValues.Set(key, value)` – key/value lines in the on-screen debug text.
 - `PerformanceCounters.Drawing` – named timing measurements shown on screen.
 - The player debug text shows the cell, the blocks in the column, the physics surfaces at the player and the last fall rescue.

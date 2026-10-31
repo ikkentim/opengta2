@@ -19,12 +19,13 @@ public class PlayerControllerComponent : BaseComponent
     private readonly LevelProvider _levelProvider;
     private readonly Camera _camera;
     private Ped? _player;
-    private bool _moveSlow;
+    private readonly DebugSettings _debugSettings;
     private CharacterMover? _mover;
     private Vector3 _spawn;
 
-    public PlayerControllerComponent(GtaGame game, Controls controls, PedManager pedManager, LevelProvider levelProvider, Camera camera) : base(game)
+    public PlayerControllerComponent(GtaGame game, Controls controls, PedManager pedManager, LevelProvider levelProvider, Camera camera, DebugSettings debugSettings) : base(game)
     {
+        _debugSettings = debugSettings;
         _controls = controls;
         _pedManager = pedManager;
         _levelProvider = levelProvider;
@@ -84,11 +85,6 @@ public class PlayerControllerComponent : BaseComponent
         if (_controls.IsKeyPressed(Control.Backward))
             fd--;
 
-        if (_controls.IsKeyDown(Keys.F2))
-        {
-            _moveSlow = !_moveSlow;
-        }
-
         if (_player.IsDrowning)
         {
             // no control while sinking
@@ -103,7 +99,7 @@ public class PlayerControllerComponent : BaseComponent
         _player.Rotation += lr * MathHelper.TwoPi * gameTime.GetDelta();
             
         var heading = new Vector2(MathF.Sin(-_player.Rotation), MathF.Cos(-_player.Rotation));
-        var delta = heading * fd * gameTime.GetDelta() * 2 * (_moveSlow ? 0.1f : 1);
+        var delta = heading * fd * gameTime.GetDelta() * 2 * (_debugSettings.SlowPlayer ? 0.1f : 1);
 
         var radius = _player.Body.Radius;
         DiagnosticHighlight.Add(_player.Position - new Vector3(radius, radius, 0), new Vector3(radius * 2, radius * 2, _player.Body.Height), Color.Blue);

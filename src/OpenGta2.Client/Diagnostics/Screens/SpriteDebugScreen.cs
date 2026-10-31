@@ -1,35 +1,36 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using OpenGta2.Client.Assets.Effects;
-using OpenGta2.Client.Diagnostics;
 using OpenGta2.Client.Levels;
 using OpenGta2.Client.Rendering;
 using OpenGta2.Client.Utilities;
 using OpenGta2.GameData.Style;
 
-namespace OpenGta2.Client.Components;
+namespace OpenGta2.Client.Diagnostics.Screens;
 
 /// <summary>
 /// Debug tool for finding out what the sprites in the style file are.
 /// </summary>
 /// <remarks>
-/// F3 toggles the viewer. It starts as a grid of 8 x 8 sprites with their numbers; PageUp/PageDown flip pages and Home/End
-/// jump to the first/last page. F6 switches to a single large sprite in the middle of the screen, where PageUp/PageDown
+/// It starts as a grid of 8 x 8 sprites with their numbers; PageUp/PageDown flip pages and Home/End
+/// jump to the first/last page. F5 switches to a single large sprite in the middle of the screen, where PageUp/PageDown
 /// step by 1, Home/End by 10 and Enter plays on from the current sprite at 10 sprites per second.
-/// F4 switches between car, ped, code object, map object, user and font sprites. F5 toggles additive blending
-/// (some effect sprites only look right that way). F7 cycles through the remap (recolour) palettes of the current kind:
+/// F6 switches between car, ped, code object, map object, user and font sprites. F7 toggles additive blending
+/// (some effect sprites only look right that way). F8 cycles through the remap (recolour) palettes of the current kind:
 /// the original game recolours sprites such as explosions, so a sprite can look completely different in another remap.
 /// The numbers are the ones <c>GetSpriteTexture</c> takes.
 /// </remarks>
-public class SpritePreviewComponent : BaseDrawableComponent
+public class SpriteDebugScreen : IDebugScreen
 {
     private const float PlaySpeed = 10;
     private const int GridSize = 8;
     private const int SpritesPerPage = GridSize * GridSize;
 
+    private readonly GtaGame _game;
     private readonly Camera _camera;
     private readonly Controls _controls;
     private readonly LevelProvider _levelProvider;
@@ -40,7 +41,6 @@ public class SpritePreviewComponent : BaseDrawableComponent
     private SpriteFont? _font;
     private Texture2D? _pixel;
 
-    private bool _active;
     private bool _grid = true;
     private bool _additive;
     private bool _playing;
@@ -49,18 +49,34 @@ public class SpritePreviewComponent : BaseDrawableComponent
     private int _number;
     private int _remap = -1;
 
-    public SpritePreviewComponent(GtaGame game, Camera camera, Controls controls, LevelProvider levelProvider) : base(game)
+    public SpriteDebugScreen(GtaGame game, Camera camera, Controls controls, LevelProvider levelProvider)
     {
+        _game = game;
         _camera = camera;
         _controls = controls;
         _levelProvider = levelProvider;
     }
 
-    protected override void LoadContent()
+    public string Name => "Sprites";
+
+    public IReadOnlyList<DebugKey> HelpKeys { get; } = new DebugKey[]
     {
-        _effect = Game.AssetManager.CreateWorldSpriteEffect();
+        new("PgUp / PgDn", "next / previous page (grid) or sprite (single)"),
+        new("Home / End", "first / last page (grid) or +-10 sprites (single)"),
+        new("F5", "grid / single sprite"),
+        new("F6", "sprite kind (car, ped, code obj, map obj, user, font)"),
+        new("F7", "additive blending"),
+        new("F8", "next remap palette"),
+        new("Enter", "play on from the sprite (single)"),
+    };
+
+    private GraphicsDevice GraphicsDevice => _game.GraphicsDevice;
+
+    public void LoadContent()
+    {
+        _effect = _game.AssetManager.CreateWorldSpriteEffect();
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _font = Game.AssetManager.GetDebugFont();
+        _font = _game.AssetManager.GetDebugFont();
 
         // a single white pixel to draw the cell backgrounds with
         _pixel = new Texture2D(GraphicsDevice, 1, 1);
@@ -76,8 +92,6 @@ public class SpritePreviewComponent : BaseDrawableComponent
             new(new Vector3(0.5f, 0.5f, 0), new Vector2(1, 1))
         });
         _indices.SetData(new short[] { 0, 1, 2, 2, 1, 3 });
-
-        base.LoadContent();
     }
 
     private int Count => _kind switch
@@ -94,30 +108,28 @@ public class SpritePreviewComponent : BaseDrawableComponent
 
     private int PageCount => (Count + SpritesPerPage - 1) / SpritesPerPage;
 
-    public override void Update(GameTime gameTime)
+    public void Opened()
     {
-        if (_controls.IsKeyDown(Keys.F3))
-        {
-            _active = !_active;
-            if (!_active) DiagnosticValues.Set("Sprite", "off");
-        }
+    }
 
-        if (!_active) return;
+    public void Closed() => DiagnosticValues.Set("Sprite", "off");
 
-        if (_controls.IsKeyDown(Keys.F4))
+    public void Update(GameTime gameTime)
+    {
+        if (_controls.IsKeyDown(Keys.F6))
         {
             _kind = _kind == SpriteKind.Font ? SpriteKind.Car : _kind + 1;
             _number = 0;
             _remap = -1;
         }
 
-        if (_controls.IsKeyDown(Keys.F5)) _additive = !_additive;
-        if (_controls.IsKeyDown(Keys.F7))
+        if (_controls.IsKeyDown(Keys.F7)) _additive = !_additive;
+        if (_controls.IsKeyDown(Keys.F8))
         {
             // -1 is the sprite's own palette, then each of the remap palettes of this kind
             _remap = _remap + 1 >= _levelProvider.Style.PaletteBase.GetRemap(_kind) ? -1 : _remap + 1;
         }
-        if (_controls.IsKeyDown(Keys.F6))
+        if (_controls.IsKeyDown(Keys.F5))
         {
             _grid = !_grid;
             _playing = false;
@@ -178,10 +190,8 @@ public class SpritePreviewComponent : BaseDrawableComponent
         if (_playing && _number >= Count - 1) _playing = false;
     }
 
-    public override void Draw(GameTime gameTime)
+    public void Draw(GameTime gameTime)
     {
-        if (!_active) return;
-
         if (_grid)
         {
             DrawGrid();
