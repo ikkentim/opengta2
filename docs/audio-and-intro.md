@@ -5,7 +5,7 @@
 `AudioTestComponent` loads `data/Audio/bil.sdt` (the index: `SdtReader` → `SoundEntry[]`) and `data/Audio/bil.raw`
 (the samples: `RawReader.Read(entries)` → `SoundLibrary`).
 `SoundLibrary.GetSound(index)` returns a `Sound` whose `Stream` puts a synthesized WAV header in front of the raw PCM
-(`SoundStream`); that stream is fed to MonoGame's `SoundEffect.FromStream`. Pressing Tab plays sound 309 or 310 (test sounds).
+(`SoundStream`; 16-bit signed mono, except the 8-bit unsigned entries at 5500 Hz, see [audio-ambience.md](audio-ambience.md)); that stream is fed to MonoGame's `SoundEffect.FromStream`. Pressing Tab plays sound 309 or 310 (test sounds).
 There is no mixer, no 3D positioning, and no per-level bank selection yet; the bank is hard-coded to `bil`.
 
 ## Intro movie

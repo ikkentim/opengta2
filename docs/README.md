@@ -14,6 +14,7 @@ problems, so we have a baseline for the upcoming collision / movement / vertical
 | [ped-sprites.md](ped-sprites.md) | Layout of the ped sprites in the style file (partly guesses), drowning plan |
 | [collision.md](collision.md) | Current collision implementation, step by step |
 | [collision-issues.md](collision-issues.md) | Catalogue of bugs/limitations in the current collision, and requirements for the rewrite |
+| [audio-ambience.md](audio-ambience.md) | Research notes on atmosphere audio: sound objects, the sound bank, what is still unknown |
 | [audio-and-intro.md](audio-and-intro.md) | Sound library loading, the Bink intro |
 
 Older notes: [`/gtadocs.md`](../gtadocs.md) (file types and format links).

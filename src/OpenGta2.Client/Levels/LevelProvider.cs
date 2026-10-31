@@ -52,10 +52,17 @@ public class LevelProvider
 
     public bool IsMapLoaded => _map != null && _style != null && _textures != null;
 
+    /// <summary>
+    /// Name of the loaded level: the file name of its style, for example "bil". The sound bank of the level (data/Audio/bil.sdt) has the same name.
+    /// </summary>
+    public string LevelName { get; private set; } = "";
+
     public void LoadLevel(string mapFile, string styleFile)
     {
         try
         {
+            LevelName = System.IO.Path.GetFileNameWithoutExtension(styleFile);
+
             using var mapStream = TestGamePath.OpenFile(mapFile);
             using var mapRiffReader = new RiffReader(mapStream);
             var mapreader = new MapReader(mapRiffReader);
